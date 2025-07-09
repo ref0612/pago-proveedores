@@ -1,3 +1,5 @@
+com\pullman\controller\TripController.class
+com\pullman\config\SecurityConfig.class
 com\pullman\repository\EntrepreneurRepository.class
 com\pullman\repository\PaymentRepository.class
 com\pullman\service\AuditLogService.class
@@ -14,6 +16,7 @@ com\pullman\repository\AuditLogRepository.class
 com\pullman\domain\Liquidation.class
 com\pullman\domain\Zone.class
 com\pullman\service\PaymentService.class
+com\pullman\service\CsvImportService.class
 com\pullman\repository\ZoneRepository.class
 com\pullman\service\RouteService.class
 com\pullman\controller\RouteController.class
@@ -23,6 +26,7 @@ com\pullman\service\UserService.class
 com\pullman\domain\Payment.class
 com\pullman\service\ZoneService.class
 com\pullman\domain\AuditLog.class
+com\pullman\domain\Trip.class
 com\pullman\controller\EntrepreneurController.class
 com\pullman\controller\LiquidationController.class
 com\pullman\domain\Entrepreneur.class
@@ -32,3 +36,4 @@ com\pullman\service\LiquidationService.class
 com\pullman\controller\AuditLogController.class
 com\pullman\repository\RouteRepository.class
 com\pullman\controller\PaymentController.class
+com\pullman\repository\TripRepository.class
