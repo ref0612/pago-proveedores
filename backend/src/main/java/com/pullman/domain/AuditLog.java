@@ -1,6 +1,6 @@
 package com.pullman.domain;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
@@ -21,5 +21,7 @@ public class AuditLog {
     private String detalle;
 
     // Getters y setters
-    // ...
+    public void setId(Long id) {
+        this.id = id;
+    }
 } 

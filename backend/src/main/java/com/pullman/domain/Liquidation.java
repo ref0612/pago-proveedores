@@ -1,6 +1,6 @@
 package com.pullman.domain;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.time.LocalDate;
 
 @Entity
@@ -23,5 +23,7 @@ public class Liquidation {
     private User generadoPor;
 
     // Getters y setters
-    // ...
+    public void setId(Long id) {
+        this.id = id;
+    }
 } 

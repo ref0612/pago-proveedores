@@ -1,6 +1,6 @@
 package com.pullman.domain;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Set;
 
 @Entity
@@ -19,5 +19,7 @@ public class Zone {
     // private Set<Entrepreneur> empresarios;
 
     // Getters y setters
-    // ...
+    public void setId(Long id) {
+        this.id = id;
+    }
 } 

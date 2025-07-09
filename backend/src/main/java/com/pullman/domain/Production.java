@@ -1,6 +1,6 @@
 package com.pullman.domain;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.time.LocalDate;
 
 @Entity
@@ -25,5 +25,7 @@ public class Production {
     private User validadoPor;
 
     // Getters y setters
-    // ...
+    public void setId(Long id) {
+        this.id = id;
+    }
 } 

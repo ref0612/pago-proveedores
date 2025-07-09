@@ -1,6 +1,6 @@
 package com.pullman.domain;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "entrepreneurs")
@@ -18,5 +18,7 @@ public class Entrepreneur {
     private Zone zona;
 
     // Getters y setters
-    // ...
+    public void setId(Long id) {
+        this.id = id;
+    }
 } 

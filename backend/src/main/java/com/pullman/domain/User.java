@@ -1,6 +1,6 @@
 package com.pullman.domain;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Set;
 
 @Entity
@@ -28,6 +28,10 @@ public class User {
 
     // Getters y setters
     // ...
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public enum Role {
         ADMIN, VALIDADOR, MIEMBRO, INVITADO
