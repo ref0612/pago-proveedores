@@ -8,16 +8,21 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/trips")
 @CrossOrigin(origins = "*")
 public class TripController {
+
+    private static final Logger logger = LoggerFactory.getLogger(TripController.class);
 
     @Autowired
     private TripRepository tripRepository;
@@ -48,10 +53,31 @@ public class TripController {
     // Importar viajes desde CSV
     @PostMapping("/import-csv")
     public ResponseEntity<List<Trip>> importTripsFromCsv(@RequestParam("file") MultipartFile file) {
+        logger.info("Recibida petición de importación CSV. Archivo: {}, Tamaño: {} bytes", 
+                   file.getOriginalFilename(), file.getSize());
+        
         try {
             List<Trip> importedTrips = csvImportService.importTripsFromCsv(file);
+            logger.info("Importación exitosa. {} viajes importados", importedTrips.size());
             return ResponseEntity.ok(importedTrips);
         } catch (IOException e) {
+            logger.error("Error durante la importación CSV", e);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    // Obtener estadísticas de importación CSV
+    @PostMapping("/import-csv/stats")
+    public ResponseEntity<Map<String, Object>> getImportStats(@RequestParam("file") MultipartFile file) {
+        logger.info("Recibida petición de estadísticas CSV. Archivo: {}, Tamaño: {} bytes", 
+                   file.getOriginalFilename(), file.getSize());
+        
+        try {
+            Map<String, Object> stats = csvImportService.getImportStatistics(file);
+            logger.info("Estadísticas generadas: {}", stats);
+            return ResponseEntity.ok(stats);
+        } catch (IOException e) {
+            logger.error("Error al generar estadísticas CSV", e);
             return ResponseEntity.badRequest().build();
         }
     }

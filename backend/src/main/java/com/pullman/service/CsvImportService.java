@@ -21,8 +21,14 @@ public class CsvImportService {
     @Autowired
     private TripRepository tripRepository;
 
+    private static final int BATCH_SIZE = 1000; // Procesar en lotes de 1000 registros
+    private static final int PROGRESS_UPDATE_INTERVAL = 5000; // Actualizar progreso cada 5000 registros
+
     public List<Trip> importTripsFromCsv(MultipartFile file) throws IOException {
-        List<Trip> trips = new ArrayList<>();
+        List<Trip> allTrips = new ArrayList<>();
+        List<Trip> batchTrips = new ArrayList<>();
+        int totalProcessed = 0;
+        int totalSaved = 0;
         
         try (BufferedReader br = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
             String line;
@@ -38,13 +44,71 @@ public class CsvImportService {
                 
                 Trip trip = parseCsvLine(line, columnMapping);
                 if (trip != null) {
-                    trips.add(trip);
+                    batchTrips.add(trip);
+                    totalProcessed++;
+                    
+                    // Guardar en lotes para evitar problemas de memoria
+                    if (batchTrips.size() >= BATCH_SIZE) {
+                        List<Trip> savedBatch = tripRepository.saveAll(batchTrips);
+                        allTrips.addAll(savedBatch);
+                        totalSaved += savedBatch.size();
+                        batchTrips.clear();
+                        
+                        // Log de progreso
+                        System.out.println("Procesados: " + totalProcessed + ", Guardados: " + totalSaved);
+                    }
+                }
+            }
+            
+            // Guardar el último lote si hay registros pendientes
+            if (!batchTrips.isEmpty()) {
+                List<Trip> savedBatch = tripRepository.saveAll(batchTrips);
+                allTrips.addAll(savedBatch);
+                totalSaved += savedBatch.size();
+            }
+        }
+        
+        System.out.println("Importación completada. Total procesados: " + totalProcessed + ", Total guardados: " + totalSaved);
+        return allTrips;
+    }
+
+    // Método para obtener estadísticas de importación
+    public Map<String, Object> getImportStatistics(MultipartFile file) throws IOException {
+        Map<String, Object> stats = new HashMap<>();
+        int totalLines = 0;
+        int validLines = 0;
+        int invalidLines = 0;
+        
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+            String line;
+            boolean isFirstLine = true;
+            Map<String, Integer> columnMapping = new HashMap<>();
+            
+            while ((line = br.readLine()) != null) {
+                totalLines++;
+                
+                if (isFirstLine) {
+                    columnMapping = createColumnMapping(line);
+                    isFirstLine = false;
+                    continue;
+                }
+                
+                Trip trip = parseCsvLine(line, columnMapping);
+                if (trip != null) {
+                    validLines++;
+                } else {
+                    invalidLines++;
                 }
             }
         }
         
-        // Guardar todos los viajes en la base de datos
-        return tripRepository.saveAll(trips);
+        stats.put("totalLines", totalLines);
+        stats.put("validLines", validLines);
+        stats.put("invalidLines", invalidLines);
+        stats.put("fileSize", file.getSize());
+        stats.put("fileName", file.getOriginalFilename());
+        
+        return stats;
     }
 
     private Map<String, Integer> createColumnMapping(String headerLine) {
