@@ -6,34 +6,58 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
+@CrossOrigin(origins = "*")
 public class UserController {
+    
     @Autowired
     private UserService userService;
-
+    
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
+        String email = credentials.get("email");
+        String password = credentials.get("password");
+        
+        User user = userService.authenticate(email, password);
+        
+        if (user != null) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("user", user);
+            response.put("message", "Login exitoso");
+            return ResponseEntity.ok(response);
+        } else {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Credenciales inválidas");
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
     @GetMapping
-    public List<User> getAll() {
+    public List<User> getAllUsers() {
         return userService.findAll();
     }
-
+    
     @GetMapping("/{id}")
-    public ResponseEntity<User> getById(@PathVariable Long id) {
+    public ResponseEntity<User> getUserById(@PathVariable Long id) {
         return userService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
-
+    
     @PostMapping
-    public User create(@RequestBody User user) {
+    public User createUser(@RequestBody User user) {
         return userService.save(user);
     }
-
+    
     @PutMapping("/{id}")
-    public ResponseEntity<User> update(@PathVariable Long id, @RequestBody User user) {
+    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User user) {
         return userService.findById(id)
                 .map(existing -> {
                     user.setId(id);
@@ -41,13 +65,28 @@ public class UserController {
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
-
+    
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         if (userService.findById(id).isPresent()) {
             userService.deleteById(id);
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.notFound().build();
+    }
+    
+    @PostMapping("/initialize")
+    public ResponseEntity<Map<String, Object>> initializeDefaultUsers() {
+        try {
+            userService.initializeDefaultUsers();
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Usuarios por defecto creados exitosamente");
+            response.put("usersCreated", userService.findAll().size());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Error al crear usuarios por defecto: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
     }
 } 

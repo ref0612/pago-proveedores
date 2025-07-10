@@ -4,30 +4,39 @@ import Modal from 'react-modal';
 import { SingleValue } from 'react-select';
 import * as XLSX from 'xlsx';
 
-// Lista exhaustiva de ciudades de Chile (puedes expandirla)
-const ciudadesChile = [
-  { value: 'Cartagena', label: 'Cartagena' },
-  { value: 'Concón', label: 'Concón' },
-  { value: 'El Tabo', label: 'El Tabo' },
-  { value: 'Laguna Verde', label: 'Laguna Verde' },
-  { value: 'Limache', label: 'Limache' },
-  { value: 'Los Andes', label: 'Los Andes' },
-  { value: 'San Antonio', label: 'San Antonio' },
-  { value: 'San Felipe', label: 'San Felipe' },
-  { value: 'Santiago', label: 'Santiago' },
-  { value: 'Santo Domingo', label: 'Santo Domingo' },
-  { value: 'Valparaiso', label: 'Valparaiso' },
-  { value: 'Villa Alemana', label: 'Villa Alemana' },
-  { value: 'Viña Del Mar', label: 'Viña Del Mar' },
-];
-
 interface Tramo {
   origen: { value: string; label: string } | null;
   destino: { value: string; label: string } | null;
   kilometraje: number;
 }
 
+// Función para normalizar nombres de ciudades (minúsculas, sin tildes, sin espacios extra)
+function normalizeCityName(name: string): string {
+  if (!name) return '';
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Elimina tildes y diacríticos
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 const RegistroRecorridos: React.FC = () => {
+  const [ciudadesChile, setCiudadesChile] = useState([
+    { value: 'Cartagena', label: 'Cartagena' },
+    { value: 'Concón', label: 'Concón' },
+    { value: 'El Tabo', label: 'El Tabo' },
+    { value: 'Laguna Verde', label: 'Laguna Verde' },
+    { value: 'Limache', label: 'Limache' },
+    { value: 'Los Andes', label: 'Los Andes' },
+    { value: 'San Antonio', label: 'San Antonio' },
+    { value: 'San Felipe', label: 'San Felipe' },
+    { value: 'Santiago', label: 'Santiago' },
+    { value: 'Santo Domingo', label: 'Santo Domingo' },
+    { value: 'Valparaiso', label: 'Valparaiso' },
+    { value: 'Villa Alemana', label: 'Villa Alemana' },
+    { value: 'Viña Del Mar', label: 'Viña Del Mar' },
+  ]);
   const [zones, setZones] = useState<any[]>([]);
   const [nombre, setNombre] = useState('');
   const [porcentaje, setPorcentaje] = useState<number>(0);
@@ -56,12 +65,48 @@ const RegistroRecorridos: React.FC = () => {
   const [bulkData, setBulkData] = useState<Record<string, { porcentaje: number, tramos: any[] }>>({});
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
 
+  // Estado para ciudades no configuradas
+  const [unconfiguredCities, setUnconfiguredCities] = useState<string[]>([]);
+  const [unconfiguredTramos, setUnconfiguredTramos] = useState<Array<{origen: string, destino: string}>>([]);
+  const [showCitiesModal, setShowCitiesModal] = useState(false);
+  const [loadingCities, setLoadingCities] = useState(false);
+
   // Cargar zonas al montar
   useEffect(() => {
     fetch('/api/zones')
       .then(res => res.json())
       .then(data => setZones(data))
       .catch(err => console.error('Error cargando zonas:', err));
+  }, []);
+
+  // Al montar, obtener ciudades únicas de los viajes y agregarlas si no existen
+  useEffect(() => {
+    fetch('http://localhost:8080/api/trips')
+      .then(res => res.json())
+      .then(data => {
+        const ciudadesViajes = new Map<string, string>();
+        data.forEach((trip: any) => {
+          if (trip.origin) {
+            const norm = normalizeCityName(trip.origin);
+            if (!ciudadesViajes.has(norm)) ciudadesViajes.set(norm, trip.origin.trim());
+          }
+          if (trip.destination) {
+            const norm = normalizeCityName(trip.destination);
+            if (!ciudadesViajes.has(norm)) ciudadesViajes.set(norm, trip.destination.trim());
+          }
+        });
+        setCiudadesChile(prev => {
+          const existentes = new Map(prev.map(c => [normalizeCityName(c.value), c.value]));
+          const nuevas = Array.from(ciudadesViajes.entries())
+            .filter(([norm]) => !existentes.has(norm))
+            .map(([_, original]) => ({ value: original, label: original }));
+          return [
+            ...prev,
+            ...nuevas
+          ];
+        });
+      })
+      .catch(err => console.error('Error cargando ciudades de viajes:', err));
   }, []);
 
   // Modal config
@@ -448,6 +493,25 @@ const RegistroRecorridos: React.FC = () => {
     setTimeout(() => setSuccessMsg(''), 2500);
   };
 
+  // Función para obtener ciudades no configuradas
+  const fetchUnconfiguredCities = async () => {
+    setLoadingCities(true);
+    try {
+      const response = await fetch('http://localhost:8080/api/zones/unconfigured-tramos');
+      if (response.ok) {
+        const tramos = await response.json();
+        setUnconfiguredTramos(tramos);
+        setShowCitiesModal(true);
+      } else {
+        console.error('Error obteniendo tramos no configurados');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoadingCities(false);
+    }
+  };
+
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-4">Manejo de Zonas</h1>
@@ -457,6 +521,13 @@ const RegistroRecorridos: React.FC = () => {
           onClick={() => setModalOpen(true)}
         >
           Crear zona
+        </button>
+        <button
+          className="bg-orange-600 text-white px-4 py-2 rounded"
+          onClick={fetchUnconfiguredCities}
+          disabled={loadingCities}
+        >
+          {loadingCities ? 'Cargando...' : 'Ver tramos sin configurar'}
         </button>
         <label className="bg-green-600 text-white px-4 py-2 rounded cursor-pointer">
           Carga masiva (Excel)
@@ -624,6 +695,73 @@ const RegistroRecorridos: React.FC = () => {
             disabled={bulkErrors.length > 0}
           >
             Confirmar importación
+          </button>
+        </div>
+      </Modal>
+      {/* Modal de ciudades no configuradas */}
+      <Modal
+        isOpen={showCitiesModal}
+        onRequestClose={() => setShowCitiesModal(false)}
+        contentLabel="Tramos no configurados"
+        className="bg-white rounded-lg shadow-lg p-8 max-w-2xl mx-auto mt-20 outline-none"
+        overlayClassName="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center"
+      >
+        <h2 className="text-xl font-bold mb-4">Verificación de tramos en zonas</h2>
+        {unconfiguredTramos.length === 0 ? (
+          <div className="text-center">
+            <div className="text-green-600 text-6xl mb-4">✓</div>
+            <p className="text-green-600 font-medium text-lg mb-2">
+              ¡Excelente! Todos los tramos están configurados
+            </p>
+            <p className="text-gray-600 text-sm">
+              Todos los tramos presentes en los viajes están correctamente asignados a sus zonas correspondientes.
+            </p>
+          </div>
+        ) : (
+          <div>
+            <div className="flex items-center mb-4">
+              <div className="text-orange-600 text-2xl mr-2">⚠️</div>
+              <p className="text-orange-600 font-medium">
+                Se encontraron {unconfiguredTramos.length} tramo{unconfiguredTramos.length > 1 ? 's' : ''} sin configurar
+              </p>
+            </div>
+            <p className="mb-4 text-gray-700">
+              Los siguientes tramos están presentes en los viajes pero no están asignados a ninguna zona. 
+              Por favor, asígnalos a una zona para poder usarlos correctamente:
+            </p>
+            <div className="max-h-60 overflow-y-auto border rounded">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 sticky top-0">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-medium">Origen</th>
+                    <th className="px-4 py-3 text-left font-medium">Destino</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {unconfiguredTramos.map((tramo, index) => {
+                    const origenBonito = ciudadesChile.find(c => normalizeCityName(c.value) === normalizeCityName(tramo.origen))?.label || tramo.origen;
+                    const destinoBonito = ciudadesChile.find(c => normalizeCityName(c.value) === normalizeCityName(tramo.destino))?.label || tramo.destino;
+                    return (
+                      <tr key={index} className="border-b hover:bg-gray-50">
+                        <td className="px-4 py-3 font-medium">{origenBonito}</td>
+                        <td className="px-4 py-3 font-medium">{destinoBonito}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-4 text-sm text-gray-600">
+              💡 <strong>Consejo:</strong> Puedes crear una nueva zona o agregar estos tramos a una zona existente.
+            </p>
+          </div>
+        )}
+        <div className="flex justify-end mt-6">
+          <button
+            onClick={() => setShowCitiesModal(false)}
+            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition-colors"
+          >
+            Entendido
           </button>
         </div>
       </Modal>

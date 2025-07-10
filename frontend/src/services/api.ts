@@ -3,12 +3,12 @@ const API_BASE_URL = 'http://localhost:8080/api';
 
 // Función para obtener las credenciales de autenticación
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('authToken');
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
   
   // Temporalmente comentado para probar sin autenticación
+  // const token = localStorage.getItem('authToken');
   // if (token) {
   //   headers['Authorization'] = `Bearer ${token}`;
   // }
@@ -18,10 +18,10 @@ const getAuthHeaders = () => {
 
 // Función para obtener las credenciales para archivos (sin Content-Type)
 const getFileAuthHeaders = () => {
-  const token = localStorage.getItem('authToken');
   const headers: Record<string, string> = {};
   
   // Temporalmente comentado para probar sin autenticación
+  // const token = localStorage.getItem('authToken');
   // if (token) {
   //   headers['Authorization'] = `Bearer ${token}`;
   // }
@@ -98,6 +98,24 @@ export const uploadCsvFile = async (file: File) => {
 // Funciones específicas para viajes
 export const tripsApi = {
   getAll: () => apiGet('/trips'),
+  getAllPaginated: (page = 0, size = 1000) => apiGet(`/trips/paginated?page=${page}&size=${size}`),
+  getAllComplete: async () => {
+    console.log('Cargando todos los viajes...');
+    const allTrips: any[] = [];
+    let page = 0;
+    let hasNext = true;
+    
+    while (hasNext) {
+      console.log(`Cargando página ${page}...`);
+      const response = await apiGet(`/trips/paginated?page=${page}&size=1000`);
+      allTrips.push(...response.content);
+      hasNext = response.hasNext;
+      page++;
+    }
+    
+    console.log(`Total de viajes cargados: ${allTrips.length}`);
+    return allTrips;
+  },
   getById: (id: number) => apiGet(`/trips/${id}`),
   create: (trip: any) => apiPost('/trips', trip),
   update: (id: number, trip: any) => apiPost(`/trips/${id}`, trip),
@@ -111,5 +129,12 @@ export const tripsApi = {
   getRevenueByDate: (date: string) => apiGet(`/trips/revenue/date/${date}`),
   getRevenueByCompany: (date: string) => apiGet(`/trips/revenue/company/${date}`),
   getRevenueByRoute: (date: string) => apiGet(`/trips/revenue/route/${date}`),
+  getStats: () => apiGet('/trips/stats'),
   importCsv: uploadCsvFile,
-}; 
+};
+
+export const productionsApi = {
+  getAll: () => apiGet('/productions'),
+  getAprobadas: () => apiGet('/productions?validado=true'),
+  // Puedes agregar más funciones según sea necesario
+};

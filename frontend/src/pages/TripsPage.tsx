@@ -108,6 +108,7 @@ const TripsPage: React.FC = () => {
   const [decenaSeleccionada, setDecenaSeleccionada] = useState<string>(getDecenaActual());
   const [fechaDesde, setFechaDesde] = useState<string>('');
   const [fechaHasta, setFechaHasta] = useState<string>('');
+  const [loadingProgress, setLoadingProgress] = useState<string>('');
 
   // Cargar viajes al montar el componente
   useEffect(() => {
@@ -126,38 +127,44 @@ const TripsPage: React.FC = () => {
   const fetchTrips = async () => {
     setLoading(true);
     setError(null);
+    setLoadingProgress('Iniciando carga...');
     
     try {
-      const data = await tripsApi.getAll();
+      console.log('Iniciando carga de viajes...');
+      const data = await tripsApi.getAllComplete();
+      console.log(`Viajes cargados: ${data.length}`);
       setTrips(data);
+      setLoadingProgress(`Carga completada: ${data.length} viajes`);
     } catch (err) {
       setError('Error al cargar los viajes');
       console.error('Error fetching trips:', err);
     } finally {
       setLoading(false);
+      setTimeout(() => setLoadingProgress(''), 3000); // Limpiar mensaje después de 3 segundos
     }
   };
 
   // Filtrar viajes por fecha
   const tripsFiltrados = trips.filter(trip => {
-    if (!trip.travelDate) return true; // Si no hay fecha, incluir
-    
+    if (!trip.travelDate) return true;
     const fechaViaje = new Date(trip.travelDate);
-    // Normalizar la fecha del viaje a solo fecha (sin hora)
-    const fechaViajeNormalizada = new Date(fechaViaje.getFullYear(), fechaViaje.getMonth(), fechaViaje.getDate());
-    
+    const fechaViajeYMD = fechaViaje.toISOString().slice(0, 10); // 'YYYY-MM-DD'
+
     if (fechaDesde) {
-      const desde = new Date(fechaDesde);
-      if (fechaViajeNormalizada < desde) return false;
+      if (fechaViajeYMD < fechaDesde) {
+        return false;
+      }
     }
-    
     if (fechaHasta) {
-      const hasta = new Date(fechaHasta);
-      if (fechaViajeNormalizada > hasta) return false;
+      if (fechaViajeYMD > fechaHasta) {
+        return false;
+      }
     }
-    
     return true;
   });
+
+  // Mostrar todas las fechas únicas presentes en los viajes cargados
+  console.log('Fechas únicas en los viajes cargados:', Array.from(new Set(trips.map(t => t.travelDate))));
 
   // Validar que la fecha "hasta" sea mayor o igual que "desde"
   const fechaValida = !fechaDesde || !fechaHasta || new Date(fechaDesde) <= new Date(fechaHasta);
@@ -293,6 +300,13 @@ const TripsPage: React.FC = () => {
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
             <p className="text-red-700">{error}</p>
+          </div>
+        )}
+
+        {/* Indicador de progreso */}
+        {loadingProgress && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <p className="text-blue-700 text-sm">{loadingProgress}</p>
           </div>
         )}
 

@@ -3,26 +3,26 @@ import { useState } from 'react';
 export interface Validacion {
   id?: number;
   decena: string;
-  empresario: string;
   total: number;
   validado: boolean;
   comentarios: string;
-  bloqueado: boolean;
+  entrepreneur: { nombre: string };
 }
 
 // Cambia esta URL por la de tu backend
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api/validations';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api/productions/pendientes';
 
 export function useValidacionApi() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Obtener validaciones
-  const fetchValidaciones = async (): Promise<Validacion[]> => {
+  const fetchValidaciones = async (decena?: string, includeValidated: boolean = true): Promise<Validacion[]> => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(API_URL);
+      const url = decena ? `${API_URL}?decena=${decena}&includeValidated=${includeValidated}` : `${API_URL}?includeValidated=${includeValidated}`;
+      const res = await fetch(url);
       if (!res.ok) throw new Error('Error al obtener validaciones');
       return await res.json();
     } catch (err: any) {

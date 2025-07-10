@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { tripsApi } from '../../services/api';
 
 interface Trip {
   id: number;
@@ -9,7 +10,7 @@ interface Trip {
   roadRevenue?: number;
   manualIncome?: string | number;
   totalIngresos: number;
-  travelDate?: string; // Campo de fecha del viaje
+  travelDate?: string;
 }
 
 interface Route {
@@ -24,6 +25,15 @@ interface Zone {
   id: number;
   nombre: string;
   porcentaje: number;
+}
+
+interface Production {
+  id: number;
+  decena: string;
+  total: number;
+  validado: boolean;
+  comentarios: string;
+  entrepreneur: { nombre: string };
 }
 
 // Función para normalizar strings (minúsculas, sin tildes, sin espacios extra)
@@ -107,77 +117,131 @@ const CalculoProduccion: React.FC = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
   const [routes, setRoutes] = useState<Route[]>([]);
+  const [producciones, setProducciones] = useState<Production[]>([]);
   const [detalleEmpresario, setDetalleEmpresario] = useState<string | null>(null);
   const [decenaSeleccionada, setDecenaSeleccionada] = useState<string>(getDecenaActual());
-  const [fechaDesde, setFechaDesde] = useState<string>('');
-  const [fechaHasta, setFechaHasta] = useState<string>('');
+  const [generatingProductions, setGeneratingProductions] = useState<boolean>(false);
+  const [generationMessage, setGenerationMessage] = useState<string>('');
+  const [generationType, setGenerationType] = useState<'success' | 'error' | null>(null);
+  const [loadingTrips, setLoadingTrips] = useState<boolean>(false);
+  const [loadingProgress, setLoadingProgress] = useState<string>('');
 
   useEffect(() => {
-    fetch('/api/trips')
-      .then(res => res.json())
-      .then(data => {
-        // Calcular totalIngresos para cada viaje
-        const tripsWithTotal = data.map((v: any) => {
-          const branch = Number(v.branchRevenue) || 0;
-          const road = Number(v.roadRevenue) || 0;
-          // manualIncome puede ser string, intenta convertir a número
-          let manual = 0;
-          if (v.manualIncome !== undefined && v.manualIncome !== null && v.manualIncome !== '') {
-            manual = Number(String(v.manualIncome).replace(/[^\d.\-]/g, '')) || 0;
-          }
-          return {
-            ...v,
-            totalIngresos: branch + road + manual,
-          };
-        });
-        setTrips(tripsWithTotal);
-      });
+    fetchTrips();
     fetch('/api/zones')
       .then(res => res.json())
       .then(data => setZones(data));
     fetch('/api/routes')
       .then(res => res.json())
       .then(data => setRoutes(data));
+    fetch('/api/productions')
+      .then(res => res.json())
+      .then(data => setProducciones(data));
   }, []);
 
-  // Actualizar fechas cuando cambia la decena seleccionada
-  useEffect(() => {
-    if (decenaSeleccionada) {
-      const { desde, hasta } = getFechasDecena(decenaSeleccionada);
-      setFechaDesde(desde);
-      setFechaHasta(hasta);
+  const fetchTrips = async () => {
+    setLoadingTrips(true);
+    setLoadingProgress('Iniciando carga de viajes...');
+    
+    try {
+      console.log('Cargando todos los viajes para Producción...');
+      const data = await tripsApi.getAllComplete();
+      
+      // Calcular totalIngresos para cada viaje
+      const tripsWithTotal = data.map((v: any) => {
+        const branch = Number(v.branchRevenue) || 0;
+        const road = Number(v.roadRevenue) || 0;
+        // manualIncome puede ser string, intenta convertir a número
+        let manual = 0;
+        if (v.manualIncome !== undefined && v.manualIncome !== null && v.manualIncome !== '') {
+          manual = Number(String(v.manualIncome).replace(/[^\d.\-]/g, '')) || 0;
+        }
+        return {
+          ...v,
+          totalIngresos: branch + road + manual,
+        };
+      });
+      
+      setTrips(tripsWithTotal);
+      setLoadingProgress(`Carga completada: ${tripsWithTotal.length} viajes`);
+      console.log(`Viajes cargados para Producción: ${tripsWithTotal.length}`);
+    } catch (err) {
+      console.error('Error fetching trips for Producción:', err);
+      setLoadingProgress('Error al cargar viajes');
+    } finally {
+      setLoadingTrips(false);
+      setTimeout(() => setLoadingProgress(''), 3000);
     }
-  }, [decenaSeleccionada]);
+  };
 
-  // Filtrar viajes por fecha
-  const tripsFiltrados = trips.filter(v => {
-    if (!v.travelDate) return true; // Si no hay fecha, incluir
+  // Función para generar producciones automáticamente
+  const generateProductions = async (decena: string) => {
+    setGeneratingProductions(true);
+    setGenerationMessage('');
+    setGenerationType(null);
     
-    const fechaViaje = new Date(v.travelDate);
-    // Normalizar la fecha del viaje a solo fecha (sin hora)
-    const fechaViajeNormalizada = new Date(fechaViaje.getFullYear(), fechaViaje.getMonth(), fechaViaje.getDate());
-    
-    if (fechaDesde) {
-      const desde = new Date(fechaDesde);
-      if (fechaViajeNormalizada < desde) return false;
+    try {
+      const response = await fetch(`/api/productions/generate?decena=${decena}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.generatedCount > 0) {
+          setGenerationMessage(`✅ ${result.message}. Se generaron ${result.generatedCount} producciones para la decena ${result.decena}.`);
+          setGenerationType('success');
+          // Recargar producciones después de generar
+          fetch('/api/productions')
+            .then(res => res.json())
+            .then(data => setProducciones(data));
+        } else {
+          setGenerationMessage('');
+          setGenerationType(null);
+        }
+      } else {
+        const error = await response.json();
+        setGenerationMessage(`❌ Error: ${error.error || 'No se pudieron generar las producciones'}`);
+        setGenerationType('error');
+      }
+    } catch (error) {
+      setGenerationMessage(`❌ Error de conexión: ${error}`);
+      setGenerationType('error');
+    } finally {
+      setGeneratingProductions(false);
     }
-    
-    if (fechaHasta) {
-      const hasta = new Date(fechaHasta);
-      if (fechaViajeNormalizada > hasta) return false;
+  };
+
+  // Generar producciones automáticamente cuando se carga el componente
+  useEffect(() => {
+    if (trips.length > 0 && zones.length > 0 && routes.length > 0) {
+      generateProductions(decenaSeleccionada);
     }
-    
-    return true;
+  }, [trips.length, zones.length, routes.length, decenaSeleccionada]);
+
+  // Eliminar duplicados de fechaDesde y fechaHasta
+  // Ya no se usan useState para fechaDesde y fechaHasta, solo las derivadas de la decena
+  // const { desde: fechaDesde, hasta: fechaHasta } = getFechasDecena(decenaSeleccionada);
+
+  // Filtrar viajes por decena seleccionada
+  const viajesParaCalcular = trips.filter(v => {
+    if (!v.travelDate) return false;
+    const fechaViaje = v.travelDate.slice(0, 10); // formato YYYY-MM-DD
+    const { desde, hasta } = getFechasDecena(decenaSeleccionada);
+    return fechaViaje >= desde && fechaViaje <= hasta;
   });
 
   // Validar que la fecha "hasta" sea mayor o igual que "desde"
-  const fechaValida = !fechaDesde || !fechaHasta || new Date(fechaDesde) <= new Date(fechaHasta);
-  const mensajeError = fechaDesde && fechaHasta && !fechaValida 
-    ? 'La fecha "Hasta" debe ser mayor o igual que la fecha "Desde"' 
-    : '';
+  const fechaValida = true; // Ya no se usa fechaDesde y fechaHasta directamente
+  const mensajeError = ''; // Ya no se usa fechaDesde y fechaHasta directamente
+
+  // Usar todos los viajes para calcular por defecto
+  // const viajesParaCalcular = trips; // This line is now redundant as viajesParaCalcular is defined above
 
   // Agrupar viajes por empresa
-  const empresarios = Array.from(new Set(tripsFiltrados.map(v => v.companyName)));
+  const empresarios = Array.from(new Set(viajesParaCalcular.map(v => v.companyName)));
 
   // Buscar zona por origen/destino
   const getZonaPorTramo = (origen: string, destino: string): Zone | null => {
@@ -196,9 +260,9 @@ const CalculoProduccion: React.FC = () => {
     return null;
   };
 
-  // Calcular resumen por empresario
-  const resumen = empresarios.map(emp => {
-    const viajesEmp = tripsFiltrados.filter(v => v.companyName === emp);
+  // Calcular resumen por empresario (desde viajes)
+  const resumenCalculado = empresarios.map(emp => {
+    const viajesEmp = viajesParaCalcular.filter(v => v.companyName === emp);
     let totalServicios = 0;
     let totalIngresos = 0;
     let totalGanancia = 0;
@@ -212,9 +276,24 @@ const CalculoProduccion: React.FC = () => {
     return { emp, totalServicios, totalIngresos, totalGanancia };
   });
 
+  // Obtener producciones guardadas en BD para la decena seleccionada
+  const produccionesFiltradas = producciones.filter(p => p.decena === decenaSeleccionada);
+  const gananciaTotalBD = produccionesFiltradas.reduce((acc, p) => acc + (p.total || 0), 0);
+
+  // Combinar datos calculados con datos guardados
+  const resumenCombinado = resumenCalculado.map(calc => {
+    const prodBD = produccionesFiltradas.find(p => p.entrepreneur?.nombre === calc.emp);
+    return {
+      ...calc,
+      gananciaBD: prodBD?.total || 0,
+      validado: prodBD?.validado || false,
+      comentarios: prodBD?.comentarios || ''
+    };
+  });
+
   // Detalle por zona para un empresario
   const getDetallePorZona = (empresario: string) => {
-    const viajesEmp = tripsFiltrados.filter(v => v.companyName === empresario);
+    const viajesEmp = viajesParaCalcular.filter(v => v.companyName === empresario);
     const zonasMap: { [zonaId: number]: { zona: Zone, servicios: number, ingresos: number, ganancia: number } } = {};
     viajesEmp.forEach(v => {
       const zona = getZonaPorTramo(v.origin, v.destination);
@@ -234,9 +313,9 @@ const CalculoProduccion: React.FC = () => {
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-6">Producción por Empresario</h1>
       
-      {/* Filtros de fecha */}
+      {/* Selector de decena */}
       <div className="bg-gray-50 p-4 rounded-lg mb-6">
-        <h3 className="text-lg font-semibold mb-3">Filtros por Decena</h3>
+        <h3 className="text-lg font-semibold mb-3">Ganancia por Decena</h3>
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Seleccionar Decena:
@@ -249,69 +328,56 @@ const CalculoProduccion: React.FC = () => {
             {generarOpcionesDecenas().map(decena => {
                 const decenaNum = decena.charAt(0);
                 const nombreMesAño = getNombreMesDecena(decena);
-                
                 return (
                   <option key={decena} value={decena}>
                     {decenaNum}ª Decena {nombreMesAño}
                   </option>
                 );
               })}
-            </select>
+          </select>
         </div>
-        <div className="text-sm text-gray-600 mb-3">
-          <strong>Período seleccionado:</strong> {fechaDesde && fechaHasta ? 
-            `${new Date(fechaDesde).toLocaleDateString()} - ${new Date(fechaHasta).toLocaleDateString()}` : 
-            'No seleccionado'
-          }
-        </div>
-        <div className="flex gap-4 items-end">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Desde:
-            </label>
-            <input
-              type="date"
-              value={fechaDesde}
-              onChange={(e) => setFechaDesde(e.target.value)}
-              className={`border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                !fechaValida ? 'border-red-500' : 'border-gray-300'
-              }`}
-              max={fechaHasta || undefined}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Hasta:
-            </label>
-            <input
-              type="date"
-              value={fechaHasta}
-              onChange={(e) => setFechaHasta(e.target.value)}
-              className={`border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                !fechaValida ? 'border-red-500' : 'border-gray-300'
-              }`}
-              min={fechaDesde || undefined}
-            />
-          </div>
-          <button
-            onClick={() => {
-              setDecenaSeleccionada(getDecenaActual());
-            }}
-            className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-          >
-            Ir a Decena Actual
-          </button>
-        </div>
-        {mensajeError && (
-          <p className="text-sm text-red-600 mt-2">{mensajeError}</p>
-        )}
-        {(fechaDesde || fechaHasta) && (
-          <p className="text-sm text-gray-600 mt-2">
-            Mostrando {fechaValida ? tripsFiltrados.length : 0} de {trips.length} viajes
-          </p>
-        )}
       </div>
 
+      {/* El resto de la tabla y cálculos usan la decenaSeleccionada para filtrar producciones y mostrar la ganancia correspondiente */}
+      
+      {/* Indicador de carga */}
+      {loadingTrips && (
+        <div className="mb-4 p-4 rounded border bg-blue-100 text-blue-700 border-blue-300">
+          <div className="flex items-center">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-700 mr-2"></div>
+              {loadingProgress}
+          </div>
+        </div>
+      )}
+      
+      {/* Mensaje de generación de producciones */}
+      {generationMessage && generationType === 'success' && (
+        <div className="mb-4 p-4 rounded border bg-green-100 text-green-700 border-green-300">
+          {generationMessage}
+        </div>
+      )}
+      {generationMessage && generationType === 'error' && (
+        <div className="mb-4 p-4 rounded border bg-red-100 text-red-700 border-red-300">
+          {generationMessage}
+        </div>
+      )}
+      
+      {/* Resumen de ganancias limpio */}
+      <div className="mb-6 p-4 bg-gray-50 rounded-lg flex flex-col md:flex-row md:justify-between md:items-center">
+        <div className="mb-2 md:mb-0">
+          <span className="text-sm text-gray-600">Ganancia calculada desde viajes: </span>
+          <span className="text-lg font-bold text-blue-700">
+            ${resumenCalculado.reduce((acc, r) => acc + r.totalGanancia, 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+          </span>
+        </div>
+        <div>
+          <span className="text-sm text-gray-600">Ganancia guardada en BD: </span>
+          <span className="text-lg font-bold text-green-700">
+            ${gananciaTotalBD.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+          </span>
+        </div>
+      </div>
+      
       <table className="min-w-full border divide-y divide-gray-200 text-sm mb-8">
         <thead className="bg-gray-100">
           <tr>
@@ -323,7 +389,7 @@ const CalculoProduccion: React.FC = () => {
           </tr>
         </thead>
         <tbody>
-          {resumen.map(r => (
+          {resumenCombinado.map(r => (
             <tr key={r.emp} className="border-b">
               <td className="px-4 py-2 font-medium">{r.emp}</td>
               <td className="px-4 py-2">{r.totalServicios}</td>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { tripsApi } from '../services/api';
+import Modal from './Modal';
 
 interface CsvImportProps {
   onImportSuccess?: (data: any[]) => void;
@@ -22,6 +23,9 @@ const CsvImport: React.FC<CsvImportProps> = ({ onImportSuccess, onImportError, o
   const [importStats, setImportStats] = useState<ImportStats | null>(null);
   const [showStats, setShowStats] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [unconfiguredCities, setUnconfiguredCities] = useState<string[]>([]);
+  const [showCitiesModal, setShowCitiesModal] = useState(false);
+  const [isClearingDatabase, setIsClearingDatabase] = useState(false);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -71,6 +75,32 @@ const CsvImport: React.FC<CsvImportProps> = ({ onImportSuccess, onImportError, o
     }
   };
 
+  const handleClearDatabase = async () => {
+    if (!window.confirm('⚠️ ADVERTENCIA: Esto eliminará TODOS los viajes y producciones de la base de datos.\n\n¿Estás seguro de que quieres continuar?')) {
+      return;
+    }
+
+    setIsClearingDatabase(true);
+    try {
+      const response = await fetch('http://localhost:8080/api/trips/clear-database', {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        alert(`✅ Base de datos limpiada exitosamente\n\n- Viajes eliminados: ${result.tripsDeleted}\n- Producciones eliminadas: ${result.productionsDeleted}\n\nPuedes proceder con la nueva importación.`);
+      } else {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error clearing database:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      alert(`❌ Error al limpiar la base de datos:\n\n${errorMessage}\n\nVerifica que el backend esté ejecutándose en http://localhost:8080`);
+    } finally {
+      setIsClearingDatabase(false);
+    }
+  };
+
   const handleUpload = async () => {
     if (!file) {
       alert('Por favor selecciona un archivo primero.');
@@ -82,13 +112,20 @@ const CsvImport: React.FC<CsvImportProps> = ({ onImportSuccess, onImportError, o
 
     try {
       console.log('Iniciando importación de archivo:', file.name, 'Tamaño:', file.size);
-      const importedData = await tripsApi.importCsv(file);
+      const result = await tripsApi.importCsv(file);
       setUploadProgress(100);
+      const importedData = result.importedTrips || [];
+      const unconfigured = result.unconfiguredCities || [];
       let message = `Importación exitosa: ${importedData.length} viajes importados.`;
       if (importStats) {
         message += `\n\nEstadísticas del archivo:\n- Total de líneas: ${importStats.totalLines}\n- Líneas válidas: ${importStats.validLines}\n- Líneas inválidas: ${importStats.invalidLines}`;
       }
-      alert(message);
+      if (unconfigured.length > 0) {
+        setUnconfiguredCities(unconfigured);
+        setShowCitiesModal(true);
+      } else {
+        alert(message);
+      }
       onImportSuccess?.(importedData);
       setFile(null);
       setImportStats(null);
@@ -206,6 +243,45 @@ const CsvImport: React.FC<CsvImportProps> = ({ onImportSuccess, onImportError, o
           Cancelar
         </button>
       </div>
+
+      <div className="mt-4 pt-4 border-t border-gray-200">
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            <p className="font-medium">Herramientas de Base de Datos:</p>
+            <p className="text-xs text-gray-500">Limpia la base de datos antes de una nueva importación</p>
+          </div>
+          <button
+            onClick={handleClearDatabase}
+            disabled={isClearingDatabase || isUploading || isAnalyzing}
+            className={`px-4 py-2 rounded-md font-medium transition-colors ${
+              isClearingDatabase || isUploading || isAnalyzing
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-red-600 text-white hover:bg-red-700'
+            }`}
+          >
+            {isClearingDatabase ? 'Limpiando...' : '🧹 Limpiar Base de Datos'}
+          </button>
+        </div>
+      </div>
+
+      {showCitiesModal && (
+        <Modal isOpen={showCitiesModal} onClose={() => setShowCitiesModal(false)} title="Ciudades no configuradas en zonas">
+          <div>
+            <p className="mb-2 text-gray-700">Las siguientes ciudades están presentes en los viajes importados pero no están configuradas en ninguna zona. Por favor, asígnalas a una zona para poder usarlas correctamente:</p>
+            <ul className="list-disc pl-5 text-gray-800">
+              {unconfiguredCities.map(city => (
+                <li key={city}>{city}</li>
+              ))}
+            </ul>
+            <button
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              onClick={() => setShowCitiesModal(false)}
+            >
+              Entendido
+            </button>
+          </div>
+        </Modal>
+      )}
 
       <div className="mt-4 text-xs text-gray-500 border-t pt-4">
         <p><strong>Formato esperado:</strong></p>

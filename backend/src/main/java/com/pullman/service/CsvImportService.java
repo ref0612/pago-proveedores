@@ -2,6 +2,13 @@ package com.pullman.service;
 
 import com.pullman.domain.Trip;
 import com.pullman.repository.TripRepository;
+import com.pullman.repository.ZoneRepository;
+import com.pullman.repository.RouteRepository;
+import com.pullman.repository.EntrepreneurRepository;
+import com.pullman.service.ProductionService;
+import com.pullman.domain.Route;
+import com.pullman.domain.Zone;
+import com.pullman.domain.Entrepreneur;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,6 +28,16 @@ public class CsvImportService {
     @Autowired
     private TripRepository tripRepository;
 
+    @Autowired
+    private ZoneRepository zoneRepository;
+
+    @Autowired
+    private RouteRepository routeRepository;
+    @Autowired
+    private EntrepreneurRepository entrepreneurRepository;
+    @Autowired
+    private ProductionService productionService;
+
     private static final int BATCH_SIZE = 1000; // Procesar en lotes de 1000 registros
     private static final int PROGRESS_UPDATE_INTERVAL = 5000; // Actualizar progreso cada 5000 registros
 
@@ -29,47 +46,234 @@ public class CsvImportService {
         List<Trip> batchTrips = new ArrayList<>();
         int totalProcessed = 0;
         int totalSaved = 0;
+        int totalSkipped = 0;
+        int totalErrors = 0;
+        Set<String> decenasImportadas = new HashSet<>();
+        
+        System.out.println("=== INICIANDO IMPORTACIÓN DE CSV ===");
+        System.out.println("Archivo: " + file.getOriginalFilename());
+        System.out.println("Tamaño: " + file.getSize() + " bytes");
         
         try (BufferedReader br = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
             String line;
             boolean isFirstLine = true;
             Map<String, Integer> columnMapping = new HashMap<>();
+            int lineNumber = 0;
             
             while ((line = br.readLine()) != null) {
+                lineNumber++;
+                
+                // Saltar líneas vacías
+                if (line.trim().isEmpty()) {
+                    System.out.println("Línea " + lineNumber + ": Línea vacía, saltando...");
+                    continue;
+                }
+                
+                if (isFirstLine) {
+                    System.out.println("Línea " + lineNumber + ": Procesando encabezados...");
+                    columnMapping = createColumnMapping(line);
+                    System.out.println("Mapeo de columnas: " + columnMapping);
+                    isFirstLine = false;
+                    continue;
+                }
+                
+                try {
+                    Trip trip = parseCsvLine(line, columnMapping, lineNumber);
+                    if (trip != null) {
+                        // Validación de unicidad mejorada
+                        Trip existing = findExistingTrip(trip);
+                        if (existing != null) {
+                            // Actualizar viaje existente
+                            updateExistingTrip(existing, trip);
+                            batchTrips.add(existing);
+                            if (lineNumber % 100 == 0) {
+                                System.out.println("Línea " + lineNumber + ": Viaje existente actualizado");
+                            }
+                        } else {
+                            // Nuevo viaje
+                            batchTrips.add(trip);
+                            if (lineNumber % 100 == 0) {
+                                System.out.println("Línea " + lineNumber + ": Nuevo viaje agregado");
+                            }
+                        }
+                        
+                        // Calcular decena del viaje
+                        if (trip.getTravelDate() != null) {
+                            String decena = calcularDecena(trip.getTravelDate());
+                            decenasImportadas.add(decena);
+                        }
+                        
+                        totalProcessed++;
+                    } else {
+                        totalSkipped++;
+                        if (lineNumber % 100 == 0) {
+                            System.out.println("Línea " + lineNumber + ": Línea omitida (datos inválidos)");
+                        }
+                    }
+                } catch (Exception e) {
+                    totalErrors++;
+                    System.err.println("Línea " + lineNumber + ": Error procesando línea - " + e.getMessage());
+                    System.err.println("Contenido de la línea: " + line);
+                }
+                
+                // Procesar lote cuando alcance el tamaño
+                if (batchTrips.size() >= BATCH_SIZE) {
+                    List<Trip> savedBatch = tripRepository.saveAll(batchTrips);
+                    allTrips.addAll(savedBatch);
+                    totalSaved += savedBatch.size();
+                    batchTrips.clear();
+                    System.out.println("Lote procesado: " + totalProcessed + " procesados, " + totalSaved + " guardados");
+                }
+            }
+            
+            // Procesar lote final
+            if (!batchTrips.isEmpty()) {
+                List<Trip> savedBatch = tripRepository.saveAll(batchTrips);
+                allTrips.addAll(savedBatch);
+                totalSaved += savedBatch.size();
+                System.out.println("Lote final procesado: " + savedBatch.size() + " registros");
+            }
+        }
+        
+        // Generar producciones solo para las decenas importadas
+        System.out.println("Generando producciones para decenas: " + decenasImportadas);
+        List<Route> routes = routeRepository.findAll();
+        List<Zone> zones = zoneRepository.findAll();
+        List<Entrepreneur> entrepreneurs = entrepreneurRepository.findAll();
+        
+        for (String decena : decenasImportadas) {
+            // Obtener los viajes de esa decena
+            List<Trip> tripsDecena = allTrips.stream()
+                .filter(trip -> trip.getTravelDate() != null && calcularDecena(trip.getTravelDate()).equals(decena))
+                .toList();
+            int count = productionService.generateProductionsForDecena(decena, tripsDecena, routes, zones, entrepreneurs);
+            System.out.println("Producciones generadas para decena " + decena + ": " + count);
+        }
+        
+        System.out.println("=== RESUMEN DE IMPORTACIÓN ===");
+        System.out.println("Total líneas procesadas: " + totalProcessed);
+        System.out.println("Total guardados: " + totalSaved);
+        System.out.println("Total omitidos: " + totalSkipped);
+        System.out.println("Total errores: " + totalErrors);
+        System.out.println("Total líneas leídas (incluyendo header): " + (totalProcessed + totalSkipped + totalErrors + 1));
+        System.out.println("Diferencia (procesados - guardados): " + (totalProcessed - totalSaved));
+        System.out.println("Decenas procesadas: " + decenasImportadas);
+        
+        // Análisis detallado de la diferencia
+        if (totalProcessed != totalSaved) {
+            System.out.println("⚠️ ADVERTENCIA: Hay diferencia entre procesados y guardados!");
+            System.out.println("Posibles causas:");
+            System.out.println("- Viajes duplicados que se actualizaron en lugar de crear nuevos");
+            System.out.println("- Errores en el guardado por lotes");
+            System.out.println("- Problemas de validación en la base de datos");
+        }
+        
+        return allTrips;
+    }
+
+    private Trip findExistingTrip(Trip trip) {
+        // Buscar por criterios más específicos para evitar duplicados
+        if (trip.getTravelDate() != null && trip.getDepartureTime() != null && 
+            trip.getOrigin() != null && trip.getDestination() != null && trip.getBusNumber() != null) {
+            
+            return tripRepository.findByTravelDateAndDepartureTimeAndOriginAndDestinationAndBusNumber(
+                trip.getTravelDate(),
+                trip.getDepartureTime(),
+                trip.getOrigin().trim(),
+                trip.getDestination().trim(),
+                trip.getBusNumber().trim()
+            );
+        }
+        return null;
+    }
+
+    private void updateExistingTrip(Trip existing, Trip newData) {
+        // Actualizar solo campos que pueden cambiar, manteniendo la integridad
+        existing.setRouteName(newData.getRouteName());
+        existing.setServiceCode(newData.getServiceCode());
+        existing.setServiceType(newData.getServiceType());
+        existing.setStatus(newData.getStatus());
+        existing.setLicensePlate(newData.getLicensePlate());
+        existing.setVehicleYear(newData.getVehicleYear());
+        existing.setTotalSeats(newData.getTotalSeats());
+        existing.setInitialScore(newData.getInitialScore());
+        existing.setAdditionalScore(newData.getAdditionalScore());
+        existing.setTotalScore(newData.getTotalScore());
+        existing.setCompensation(newData.getCompensation());
+        existing.setTotalCompensated(newData.getTotalCompensated());
+        existing.setCompanyRut(newData.getCompanyRut());
+        existing.setCompanyName(newData.getCompanyName());
+        existing.setDriverName(newData.getDriverName());
+        existing.setBranchSeats(newData.getBranchSeats());
+        existing.setBranchRevenue(newData.getBranchRevenue());
+        existing.setRoadSeats(newData.getRoadSeats());
+        existing.setRoadRevenue(newData.getRoadRevenue());
+        existing.setManualIncome(newData.getManualIncome());
+    }
+
+    public Map<String, Object> importTripsAndUnconfiguredCities(MultipartFile file) throws IOException {
+        List<Trip> allTrips = new ArrayList<>();
+        List<Trip> batchTrips = new ArrayList<>();
+        Set<String> citiesInFile = new HashSet<>();
+        int totalProcessed = 0;
+        int totalSaved = 0;
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+            String line;
+            boolean isFirstLine = true;
+            Map<String, Integer> columnMapping = new HashMap<>();
+            int lineNumber = 0;
+            
+            while ((line = br.readLine()) != null) {
+                lineNumber++;
+                
+                if (line.trim().isEmpty()) {
+                    continue;
+                }
+                
                 if (isFirstLine) {
                     columnMapping = createColumnMapping(line);
                     isFirstLine = false;
                     continue;
                 }
                 
-                Trip trip = parseCsvLine(line, columnMapping);
+                Trip trip = parseCsvLine(line, columnMapping, lineNumber);
                 if (trip != null) {
                     batchTrips.add(trip);
+                    // Recolectar ciudades
+                    if (trip.getOrigin() != null && !trip.getOrigin().isEmpty()) {
+                        citiesInFile.add(trip.getOrigin().trim());
+                    }
+                    if (trip.getDestination() != null && !trip.getDestination().isEmpty()) {
+                        citiesInFile.add(trip.getDestination().trim());
+                    }
                     totalProcessed++;
-                    
-                    // Guardar en lotes para evitar problemas de memoria
                     if (batchTrips.size() >= BATCH_SIZE) {
                         List<Trip> savedBatch = tripRepository.saveAll(batchTrips);
                         allTrips.addAll(savedBatch);
                         totalSaved += savedBatch.size();
                         batchTrips.clear();
-                        
-                        // Log de progreso
-                        System.out.println("Procesados: " + totalProcessed + ", Guardados: " + totalSaved);
                     }
                 }
             }
-            
-            // Guardar el último lote si hay registros pendientes
             if (!batchTrips.isEmpty()) {
                 List<Trip> savedBatch = tripRepository.saveAll(batchTrips);
                 allTrips.addAll(savedBatch);
                 totalSaved += savedBatch.size();
             }
         }
-        
-        System.out.println("Importación completada. Total procesados: " + totalProcessed + ", Total guardados: " + totalSaved);
-        return allTrips;
+        // Obtener nombres de zonas existentes
+        List<String> zonas = zoneRepository.findAll().stream().map(z -> z.getNombre().trim()).toList();
+        // Ciudades no configuradas
+        List<String> unconfiguredCities = new ArrayList<>();
+        for (String city : citiesInFile) {
+            if (!zonas.contains(city)) {
+                unconfiguredCities.add(city);
+            }
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("importedTrips", allTrips);
+        result.put("unconfiguredCities", unconfiguredCities);
+        return result;
     }
 
     // Método para obtener estadísticas de importación
@@ -87,13 +291,17 @@ public class CsvImportService {
             while ((line = br.readLine()) != null) {
                 totalLines++;
                 
+                if (line.trim().isEmpty()) {
+                    continue;
+                }
+                
                 if (isFirstLine) {
                     columnMapping = createColumnMapping(line);
                     isFirstLine = false;
                     continue;
                 }
                 
-                Trip trip = parseCsvLine(line, columnMapping);
+                Trip trip = parseCsvLine(line, columnMapping, totalLines);
                 if (trip != null) {
                     validLines++;
                 } else {
@@ -105,8 +313,7 @@ public class CsvImportService {
         stats.put("totalLines", totalLines);
         stats.put("validLines", validLines);
         stats.put("invalidLines", invalidLines);
-        stats.put("fileSize", file.getSize());
-        stats.put("fileName", file.getOriginalFilename());
+        stats.put("validPercentage", totalLines > 0 ? (double) validLines / totalLines * 100 : 0);
         
         return stats;
     }
@@ -114,6 +321,8 @@ public class CsvImportService {
     private Map<String, Integer> createColumnMapping(String headerLine) {
         Map<String, Integer> mapping = new HashMap<>();
         String[] headers = parseCsvFields(headerLine);
+        
+        System.out.println("Headers encontrados: " + Arrays.toString(headers));
         
         for (int i = 0; i < headers.length; i++) {
             String header = headers[i].trim().toLowerCase();
@@ -202,13 +411,19 @@ public class CsvImportService {
         return mapping;
     }
 
-    private Trip parseCsvLine(String line, Map<String, Integer> columnMapping) {
+    private Trip parseCsvLine(String line, Map<String, Integer> columnMapping, int lineNumber) {
         try {
             String[] fields = parseCsvFields(line);
             
-            if (fields.length < 10) {
-                System.err.println("Línea incompleta: " + line);
+            // Validación más flexible de campos mínimos
+            if (fields.length < 3) {
+                System.err.println("Línea " + lineNumber + ": Muy pocos campos (" + fields.length + ") - " + line);
                 return null;
+            }
+            
+            // Debug: mostrar campos para líneas problemáticas
+            if (lineNumber % 1000 == 0) {
+                System.out.println("Línea " + lineNumber + ": Procesando - " + fields.length + " campos");
             }
             
             Trip trip = new Trip();
@@ -220,8 +435,19 @@ public class CsvImportService {
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
                     trip.setTravelDate(LocalDate.parse(fields[dateIndex].trim(), formatter));
                 } catch (Exception e) {
-                    System.err.println("Error parsing date: " + fields[dateIndex]);
+                    System.err.println("Línea " + lineNumber + ": Error parsing date: " + fields[dateIndex] + " - " + e.getMessage());
+                    // Intentar con formato alternativo
+                    try {
+                        DateTimeFormatter altFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+                        trip.setTravelDate(LocalDate.parse(fields[dateIndex].trim(), altFormatter));
+                    } catch (Exception e2) {
+                        System.err.println("Línea " + lineNumber + ": Error con formato alternativo también: " + fields[dateIndex]);
+                        return null; // Fecha es obligatoria
+                    }
                 }
+            } else {
+                System.err.println("Línea " + lineNumber + ": Fecha de viaje no encontrada o vacía");
+                return null;
             }
             
             // Hora de salida
@@ -230,8 +456,15 @@ public class CsvImportService {
                 try {
                     trip.setDepartureTime(parseTime(fields[timeIndex].trim()));
                 } catch (Exception e) {
-                    System.err.println("Error parsing time: " + fields[timeIndex]);
+                    System.err.println("Línea " + lineNumber + ": Error parsing time: " + fields[timeIndex] + " - " + e.getMessage());
+                    // Intentar con hora por defecto
+                    trip.setDepartureTime(LocalTime.of(0, 0));
+                    System.out.println("Línea " + lineNumber + ": Usando hora por defecto (00:00)");
                 }
+            } else {
+                // Si no hay hora, usar hora por defecto
+                trip.setDepartureTime(LocalTime.of(0, 0));
+                System.out.println("Línea " + lineNumber + ": Hora no encontrada, usando hora por defecto (00:00)");
             }
             
             // Origen
@@ -288,7 +521,7 @@ public class CsvImportService {
                 try {
                     trip.setVehicleYear(Integer.parseInt(fields[yearIndex].trim()));
                 } catch (Exception e) {
-                    System.err.println("Error parsing vehicle year: " + fields[yearIndex]);
+                    System.err.println("Línea " + lineNumber + ": Error parsing vehicle year: " + fields[yearIndex]);
                 }
             }
             
@@ -298,7 +531,7 @@ public class CsvImportService {
                 try {
                     trip.setTotalSeats(Integer.parseInt(fields[seatsIndex].trim()));
                 } catch (Exception e) {
-                    System.err.println("Error parsing total seats: " + fields[seatsIndex]);
+                    System.err.println("Línea " + lineNumber + ": Error parsing total seats: " + fields[seatsIndex]);
                 }
             }
             
@@ -308,7 +541,7 @@ public class CsvImportService {
                 try {
                     trip.setInitialScore(parseBigDecimal(fields[initialScoreIndex].trim()));
                 } catch (Exception e) {
-                    System.err.println("Error parsing initial score: " + fields[initialScoreIndex]);
+                    System.err.println("Línea " + lineNumber + ": Error parsing initial score: " + fields[initialScoreIndex]);
                 }
             }
             
@@ -318,7 +551,7 @@ public class CsvImportService {
                 try {
                     trip.setAdditionalScore(parseBigDecimal(fields[additionalScoreIndex].trim()));
                 } catch (Exception e) {
-                    System.err.println("Error parsing additional score: " + fields[additionalScoreIndex]);
+                    System.err.println("Línea " + lineNumber + ": Error parsing additional score: " + fields[additionalScoreIndex]);
                 }
             }
             
@@ -328,7 +561,7 @@ public class CsvImportService {
                 try {
                     trip.setTotalScore(parseBigDecimal(fields[totalScoreIndex].trim()));
                 } catch (Exception e) {
-                    System.err.println("Error parsing total score: " + fields[totalScoreIndex]);
+                    System.err.println("Línea " + lineNumber + ": Error parsing total score: " + fields[totalScoreIndex]);
                 }
             }
             
@@ -338,7 +571,7 @@ public class CsvImportService {
                 try {
                     trip.setCompensation(parseBigDecimal(fields[compensationIndex].trim()));
                 } catch (Exception e) {
-                    System.err.println("Error parsing compensation: " + fields[compensationIndex]);
+                    System.err.println("Línea " + lineNumber + ": Error parsing compensation: " + fields[compensationIndex]);
                 }
             }
             
@@ -348,7 +581,7 @@ public class CsvImportService {
                 try {
                     trip.setTotalCompensated(parseBigDecimal(fields[totalCompensatedIndex].trim()));
                 } catch (Exception e) {
-                    System.err.println("Error parsing total compensated: " + fields[totalCompensatedIndex]);
+                    System.err.println("Línea " + lineNumber + ": Error parsing total compensated: " + fields[totalCompensatedIndex]);
                 }
             }
             
@@ -376,7 +609,7 @@ public class CsvImportService {
                 try {
                     trip.setBranchSeats(Integer.parseInt(fields[branchSeatsIndex].trim()));
                 } catch (Exception e) {
-                    System.err.println("Error parsing branch seats: " + fields[branchSeatsIndex]);
+                    System.err.println("Línea " + lineNumber + ": Error parsing branch seats: " + fields[branchSeatsIndex]);
                 }
             }
             
@@ -386,7 +619,7 @@ public class CsvImportService {
                 try {
                     trip.setBranchRevenue(parseCurrency(fields[branchRevenueIndex].trim()));
                 } catch (Exception e) {
-                    System.err.println("Error parsing branch revenue: " + fields[branchRevenueIndex]);
+                    System.err.println("Línea " + lineNumber + ": Error parsing branch revenue: " + fields[branchRevenueIndex]);
                 }
             }
             
@@ -396,7 +629,7 @@ public class CsvImportService {
                 try {
                     trip.setRoadSeats(Integer.parseInt(fields[roadSeatsIndex].trim()));
                 } catch (Exception e) {
-                    System.err.println("Error parsing road seats: " + fields[roadSeatsIndex]);
+                    System.err.println("Línea " + lineNumber + ": Error parsing road seats: " + fields[roadSeatsIndex]);
                 }
             }
             
@@ -406,7 +639,7 @@ public class CsvImportService {
                 try {
                     trip.setRoadRevenue(parseCurrency(fields[roadRevenueIndex].trim()));
                 } catch (Exception e) {
-                    System.err.println("Error parsing road revenue: " + fields[roadRevenueIndex]);
+                    System.err.println("Línea " + lineNumber + ": Error parsing road revenue: " + fields[roadRevenueIndex]);
                 }
             }
             
@@ -419,7 +652,7 @@ public class CsvImportService {
             return trip;
             
         } catch (Exception e) {
-            System.err.println("Error parsing line: " + line + " - " + e.getMessage());
+            System.err.println("Línea " + lineNumber + ": Error parsing line: " + line + " - " + e.getMessage());
             return null;
         }
     }
@@ -442,6 +675,7 @@ public class CsvImportService {
             }
         }
         
+        // Agregar el último campo
         fields.add(currentField.toString());
         return fields.toArray(new String[0]);
     }
@@ -487,5 +721,15 @@ public class CsvImportService {
         } catch (Exception e) {
             return BigDecimal.ZERO;
         }
+    }
+
+    private String calcularDecena(LocalDate fecha) {
+        int mes = fecha.getMonthValue();
+        int anio = fecha.getYear();
+        int dia = fecha.getDayOfMonth();
+        int decena = 1;
+        if (dia > 20) decena = 3;
+        else if (dia > 10) decena = 2;
+        return decena + String.format("%02d", mes) + anio;
     }
 } 

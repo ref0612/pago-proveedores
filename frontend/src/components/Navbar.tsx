@@ -1,9 +1,8 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 export default function Navbar() {
-  const { user, role, logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -11,37 +10,46 @@ export default function Navbar() {
     navigate('/login');
   };
 
+  if (!user) {
+    return null;
+  }
+
   return (
-    <nav className="bg-blue-700 text-white px-4 py-3 flex items-center justify-between">
-      <div className="font-bold text-lg">Pullman Payment</div>
-      {user && (
-        <div className="flex items-center gap-4">
-          <Link to="/dashboard" className="hover:underline">Dashboard</Link>
-          {(role === 'ADMIN' || role === 'VALIDADOR' || role === 'MIEMBRO') && (
-            <Link to="/trips" className="hover:underline">Viajes</Link>
+    <nav className="bg-blue-600 text-white p-4">
+      <div className="flex justify-between items-center">
+        <div className="flex space-x-4">
+          <a href="/dashboard" className="hover:text-blue-200">Dashboard</a>
+          {user.canViewTrips && (
+            <a href="/trips" className="hover:text-blue-200">Viajes</a>
           )}
-          {(role === 'ADMIN' || role === 'VALIDADOR' || role === 'MIEMBRO') && (
-            <Link to="/recorridos" className="hover:underline">Manejo de Zonas</Link>
+                      {user.canViewRecorridos && (
+              <a href="/recorridos" className="hover:text-blue-200">Zonas</a>
+            )}
+          {user.canViewProduccion && (
+            <a href="/produccion" className="hover:text-blue-200">Producción</a>
           )}
-          {(role === 'ADMIN' || role === 'VALIDADOR') && (
-            <Link to="/produccion" className="hover:underline">Producción</Link>
+          {user.canViewValidacion && (
+            <a href="/validacion" className="hover:text-blue-200">Validación</a>
           )}
-          {(role === 'ADMIN' || role === 'VALIDADOR') && (
-            <Link to="/validacion" className="hover:underline">Validación</Link>
+          {user.canViewLiquidacion && (
+            <a href="/liquidacion" className="hover:text-blue-200">Liquidación</a>
           )}
-          {(role === 'ADMIN' || role === 'VALIDADOR') && (
-            <Link to="/liquidacion" className="hover:underline">Liquidación</Link>
+          {user.canViewReportes && (
+            <a href="/reportes" className="hover:text-blue-200">Reportes</a>
           )}
-          {(role === 'ADMIN' || role === 'VALIDADOR') && (
-            <Link to="/reportes" className="hover:underline">Reportes</Link>
+          {user.canViewUsuarios && (
+            <a href="/usuarios" className="hover:text-blue-200">Usuarios</a>
           )}
-          {role === 'ADMIN' && (
-            <Link to="/usuarios" className="hover:underline">Usuarios</Link>
-          )}
-          <span className="text-sm text-blue-200 ml-2">{user} ({role})</span>
-          <button onClick={handleLogout} className="ml-2 bg-red-500 px-3 py-1 rounded text-white hover:bg-red-600">Salir</button>
         </div>
-      )}
+        <div className="flex items-center space-x-4">
+          <span className="text-sm">
+            {user.nombre} ({user.rol})
+          </span>
+          <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded">
+            Cerrar sesión
+          </button>
+        </div>
+      </div>
     </nav>
   );
 } 

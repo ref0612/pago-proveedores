@@ -1,48 +1,96 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { productionsApi } from '../../services/api';
 
-interface Liquidacion {
+interface ProduccionAprobada {
   id: number;
   decena: string;
-  empresario: string;
-  monto: number;
-  pagado: boolean;
-  fechaPago?: string;
-  medioPago?: string;
-  comprobante?: string;
-  alertaVencimiento: boolean;
+  total: number;
+  entrepreneur: { nombre: string };
+  validado: boolean;
+  comentarios: string;
 }
 
-const decenas = ['2024-07-01 al 2024-07-10', '2024-07-11 al 2024-07-20'];
-const empresarios = ['Empresa 1', 'Empresa 2'];
+function generarOpcionesDecenas(): string[] {
+  const opciones: string[] = [];
+  const ahora = new Date();
+  for (let i = 0; i < 12; i++) {
+    const fecha = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
+    const mes = fecha.getMonth() + 1;
+    const año = fecha.getFullYear();
+    opciones.push(`1${mes.toString().padStart(2, '0')}${año}`);
+    opciones.push(`2${mes.toString().padStart(2, '0')}${año}`);
+    opciones.push(`3${mes.toString().padStart(2, '0')}${año}`);
+  }
+  return opciones;
+}
 
-const datosIniciales: Liquidacion[] = [
-  { id: 1, decena: decenas[0], empresario: empresarios[0], monto: 100000, pagado: false, alertaVencimiento: true },
-  { id: 2, decena: decenas[0], empresario: empresarios[1], monto: 80000, pagado: true, fechaPago: '2024-07-15', medioPago: 'Transferencia', comprobante: 'comprobante1.pdf', alertaVencimiento: false },
-];
+function getNombreMesDecena(decenaStr: string): string {
+  const mes = parseInt(decenaStr.substring(1, 3));
+  const año = parseInt(decenaStr.substring(3));
+  const fecha = new Date(año, mes - 1, 1);
+  return fecha.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+}
+
+function getDecenaActual(): string {
+  const ahora = new Date();
+  const mes = ahora.getMonth() + 1;
+  const año = ahora.getFullYear();
+  const dia = ahora.getDate();
+  let decena = 1;
+  if (dia > 20) decena = 3;
+  else if (dia > 10) decena = 2;
+  return `${decena}${mes.toString().padStart(2, '0')}${año}`;
+}
 
 export default function LiquidacionPagos() {
-  const [liquidaciones, setLiquidaciones] = useState<Liquidacion[]>(datosIniciales);
+  const [liquidaciones, setLiquidaciones] = useState<ProduccionAprobada[]>([]);
   const [pago, setPago] = useState({ fechaPago: '', medioPago: '', comprobante: '' });
   const [selected, setSelected] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [decenaSeleccionada, setDecenaSeleccionada] = useState<string>(getDecenaActual());
 
-  const handlePagar = (id: number) => {
-    setLiquidaciones(liquidaciones => liquidaciones.map(l =>
-      l.id === id ? {
-        ...l,
-        pagado: true,
-        fechaPago: pago.fechaPago,
-        medioPago: pago.medioPago,
-        comprobante: pago.comprobante,
-        alertaVencimiento: false,
-      } : l
-    ));
-    setPago({ fechaPago: '', medioPago: '', comprobante: '' });
-    setSelected(null);
+  useEffect(() => {
+    cargarProduccionesAprobadas();
+  }, []);
+
+  const cargarProduccionesAprobadas = async () => {
+    setLoading(true);
+    try {
+      // Obtener solo producciones validadas/aprobadas
+      const data = await productionsApi.getAprobadas();
+      setLiquidaciones(data);
+    } catch (err) {
+      setLiquidaciones([]);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  // Filtrar por decena seleccionada y solo aprobadas
+  const liquidacionesFiltradas = liquidaciones.filter(l => l.decena === decenaSeleccionada && l.validado === true);
 
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-4">Liquidación y Pagos</h1>
+      <div className="bg-gray-50 p-4 rounded-lg mb-6">
+        <h3 className="text-lg font-semibold mb-3">Filtrar por Decena</h3>
+        <select
+          value={decenaSeleccionada}
+          onChange={e => setDecenaSeleccionada(e.target.value)}
+          className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          {generarOpcionesDecenas().map(decena => {
+            const decenaNum = decena.charAt(0);
+            const nombreMesAño = getNombreMesDecena(decena);
+            return (
+              <option key={decena} value={decena}>
+                {decenaNum}ª Decena {nombreMesAño}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+      {loading && <div className="mb-4 text-blue-600">Cargando liquidaciones aprobadas...</div>}
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white rounded shadow">
           <thead>
@@ -50,70 +98,26 @@ export default function LiquidacionPagos() {
               <th className="p-2">Decena</th>
               <th className="p-2">Empresario</th>
               <th className="p-2">Monto</th>
-              <th className="p-2">Estado</th>
-              <th className="p-2">Fecha Pago</th>
-              <th className="p-2">Medio</th>
-              <th className="p-2">Comprobante</th>
               <th className="p-2">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {liquidaciones.map((l, i) => (
+            {liquidacionesFiltradas.map((l) => (
               <tr key={l.id} className="border-t">
                 <td className="p-2">{l.decena}</td>
-                <td className="p-2">{l.empresario}</td>
-                <td className="p-2">${l.monto.toLocaleString()}</td>
+                <td className="p-2">{l.entrepreneur?.nombre || '-'}</td>
+                <td className="p-2">${l.total?.toLocaleString() ?? 0}</td>
                 <td className="p-2">
-                  {l.pagado ? <span className="text-green-600 font-semibold">Pagado</span> : <span className="text-red-600 font-semibold">Pendiente</span>}
-                  {l.alertaVencimiento && !l.pagado && (
-                    <span className="ml-2 text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded">¡Vence pronto!</span>
-                  )}
-                </td>
-                <td className="p-2">{l.fechaPago || '-'}</td>
-                <td className="p-2">{l.medioPago || '-'}</td>
-                <td className="p-2">{l.comprobante ? <a href="#" className="text-blue-600 underline">{l.comprobante}</a> : '-'}</td>
-                <td className="p-2">
-                  {!l.pagado ? (
-                    selected === l.id ? (
-                      <div className="flex flex-col gap-2">
-                        <input
-                          className="border p-1 text-xs"
-                          type="date"
-                          placeholder="Fecha de pago"
-                          value={pago.fechaPago}
-                          onChange={e => setPago({ ...pago, fechaPago: e.target.value })}
-                        />
-                        <input
-                          className="border p-1 text-xs"
-                          placeholder="Medio de pago"
-                          value={pago.medioPago}
-                          onChange={e => setPago({ ...pago, medioPago: e.target.value })}
-                        />
-                        <input
-                          className="border p-1 text-xs"
-                          placeholder="Comprobante (nombre archivo)"
-                          value={pago.comprobante}
-                          onChange={e => setPago({ ...pago, comprobante: e.target.value })}
-                        />
-                        <button className="bg-green-600 text-white px-2 py-1 rounded" onClick={() => handlePagar(l.id)}>Registrar Pago</button>
-                        <button className="text-xs text-gray-500 underline" onClick={() => setSelected(null)}>Cancelar</button>
-                      </div>
-                    ) : (
-                      <button className="bg-blue-600 text-white px-2 py-1 rounded" onClick={() => setSelected(l.id)}>Registrar Pago</button>
-                    )
-                  ) : (
-                    <span className="text-gray-400">-</span>
-                  )}
+                  <button className="bg-blue-600 text-white px-2 py-1 rounded">Registrar Pago</button>
                 </td>
               </tr>
             ))}
-            {liquidaciones.length === 0 && (
-              <tr><td colSpan={8} className="text-center text-gray-400 p-4">No hay liquidaciones registradas.</td></tr>
+            {liquidacionesFiltradas.length === 0 && !loading && (
+              <tr><td colSpan={4} className="text-center text-gray-400 p-4">No hay liquidaciones aprobadas para mostrar en esta decena.</td></tr>
             )}
           </tbody>
         </table>
       </div>
-      <div className="mt-4 text-xs text-gray-500">* Al registrar el pago, se asocia automáticamente a empresario y período. Se alerta si el pago está por vencer.</div>
     </div>
   );
 } 

@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @Repository
@@ -41,6 +42,15 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     
     // Buscar viajes por código de servicio
     List<Trip> findByServiceCode(String serviceCode);
+    
+    // Buscar viaje por fecha, hora, origen, destino y bus
+    Trip findByTravelDateAndDepartureTimeAndOriginAndDestinationAndBusNumber(
+        LocalDate travelDate,
+        LocalTime departureTime,
+        String origin,
+        String destination,
+        String busNumber
+    );
     
     // Consulta personalizada para obtener estadísticas de ingresos
     @Query("SELECT SUM(t.branchRevenue + t.roadRevenue) FROM Trip t WHERE t.travelDate = :date")
