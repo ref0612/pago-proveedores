@@ -1,1 +1,3 @@
-node_modules
+# Ignorar todas las carpetas node_modules en cualquier parte del proyecto
+node_modules/
+**/node_modules/
