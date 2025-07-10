@@ -1,0 +1,1 @@
+export { default as LiquidacionPagos } from './LiquidacionPagos'; 
