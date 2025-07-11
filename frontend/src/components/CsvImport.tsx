@@ -232,7 +232,7 @@ const CsvImport: React.FC<CsvImportProps> = ({ onImportSuccess, onImportError, o
             >
               Entendido
             </button>
-          </div>
+          </div>l
         </Modal>
       )}
 
