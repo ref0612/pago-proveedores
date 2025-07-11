@@ -40,7 +40,7 @@ const TripList: React.FC<TripListProps> = ({ trips, onTripSelect }) => {
   const [statusFilter, setStatusFilter] = useState('');
   const [companyFilter, setCompanyFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(20);
 
   useEffect(() => {
     let filtered = trips;

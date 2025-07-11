@@ -2,22 +2,30 @@ package com.pullman.controller;
 
 import com.pullman.domain.Trip;
 import com.pullman.service.TripService;
+import com.pullman.service.CsvImportService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/trips")
+@CrossOrigin(origins = "*")
 public class TripController {
     @Autowired
     private TripService tripService;
+    
+    @Autowired
+    private CsvImportService csvImportService;
 
     @GetMapping
     public List<Trip> getAll() {
@@ -142,5 +150,47 @@ public class TripController {
     @GetMapping("/by-service-code")
     public List<Trip> getByServiceCode(@RequestParam String serviceCode) {
         return tripService.findByServiceCode(serviceCode);
+    }
+    
+    // Endpoint para obtener estadísticas de importación CSV
+    @PostMapping("/import-csv/stats")
+    public ResponseEntity<Map<String, Object>> getImportStats(@RequestParam("file") MultipartFile file) {
+        try {
+            Map<String, Object> stats = csvImportService.getImportStatistics(file);
+            return ResponseEntity.ok(stats);
+        } catch (IOException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    // Endpoint para importar viajes desde CSV
+    @PostMapping("/import-csv")
+    public ResponseEntity<Map<String, Object>> importTripsFromCsv(@RequestParam("file") MultipartFile file) {
+        try {
+            Map<String, Object> result = csvImportService.importTripsAndUnconfiguredCities(file);
+            return ResponseEntity.ok(result);
+        } catch (IOException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    // Endpoint para limpiar la base de datos
+    @DeleteMapping("/clear-database")
+    public ResponseEntity<Map<String, Object>> clearDatabase() {
+        try {
+            long tripsDeleted = tripService.deleteAll();
+            long productionsDeleted = 0; // Aquí deberías agregar el servicio de producciones si es necesario
+            
+            Map<String, Object> response = new java.util.HashMap<>();
+            response.put("message", "Base de datos limpiada exitosamente");
+            response.put("tripsDeleted", tripsDeleted);
+            response.put("productionsDeleted", productionsDeleted);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new java.util.HashMap<>();
+            errorResponse.put("error", "Error al limpiar la base de datos: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(errorResponse);
+        }
     }
 } 

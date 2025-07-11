@@ -1,3 +1,37 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Estilos personalizados para el sidebar */
+@layer components {
+  .sidebar-transition {
+    transition: transform 0.3s ease-in-out;
+  }
+  
+  .sidebar-overlay {
+    backdrop-filter: blur(2px);
+  }
+}
+
+/* Prevenir scroll del body cuando el sidebar está abierto en móvil */
+body.sidebar-open {
+  overflow: hidden;
+}
+
+/* Estilos para el scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

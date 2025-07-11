@@ -7,7 +7,7 @@ import Reportes from './pages/Reportes';
 import Usuarios from './pages/Usuarios';
 import TripsPage from './pages/TripsPage';
 import Privileges from './pages/Privileges';
-import Navbar from './components/Navbar';
+import Layout from './components/Layout';
 import { RegistroRecorridos } from './modules/Recorridos';
 import { CalculoProduccion } from './modules/Produccion';
 import { ValidacionOperacional } from './modules/Validacion';
@@ -34,52 +34,69 @@ function AppContent() {
 
   return (
     <Router key={user ? user.email : 'nouser'}>
-      {user && <Navbar />}
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={
           <RequireAuth>
-            <Dashboard />
+            <Layout>
+              <Dashboard />
+            </Layout>
           </RequireAuth>
         } />
         <Route path="/trips" element={
           <RequireAuth roles={['ADMIN', 'VALIDADOR', 'MIEMBRO']}>
-            <TripsPage />
+            <Layout>
+              <TripsPage />
+            </Layout>
           </RequireAuth>
         } />
         <Route path="/recorridos" element={
           <RequireAuth roles={['ADMIN', 'VALIDADOR', 'MIEMBRO']}>
-            <RegistroRecorridos />
+            <Layout>
+              <RegistroRecorridos />
+            </Layout>
           </RequireAuth>
         } />
         <Route path="/produccion" element={
           <RequireAuth roles={['ADMIN', 'VALIDADOR']}>
-            <CalculoProduccion />
+            <Layout>
+              <CalculoProduccion />
+            </Layout>
           </RequireAuth>
         } />
         <Route path="/validacion" element={
           <RequireAuth roles={['ADMIN', 'VALIDADOR']}>
-            <ValidacionOperacional />
+            <Layout>
+              <ValidacionOperacional />
+            </Layout>
           </RequireAuth>
         } />
         <Route path="/liquidacion" element={
           <RequireAuth roles={['ADMIN', 'VALIDADOR']}>
-            <LiquidacionPagos />
+            <Layout>
+              <LiquidacionPagos />
+            </Layout>
           </RequireAuth>
         } />
         <Route path="/reportes" element={
           <RequireAuth roles={['ADMIN', 'VALIDADOR']}>
-            <Reportes />
+            <Layout>
+              <Reportes />
+            </Layout>
           </RequireAuth>
         } />
         <Route path="/usuarios" element={
           <RequireAuth roles={['ADMIN']}>
-            <Usuarios />
+            <Layout>
+              <Usuarios />
+            </Layout>
           </RequireAuth>
         } />
         <Route path="/privileges" element={
           <RequireAuth roles={['ADMIN']}>
-            <Privileges />
+            <Layout>
+              <Privileges />
+            </Layout>
           </RequireAuth>
         } />
         <Route path="/" element={<Navigate to="/login" />} />

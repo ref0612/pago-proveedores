@@ -75,32 +75,6 @@ const CsvImport: React.FC<CsvImportProps> = ({ onImportSuccess, onImportError, o
     }
   };
 
-  const handleClearDatabase = async () => {
-    if (!window.confirm('⚠️ ADVERTENCIA: Esto eliminará TODOS los viajes y producciones de la base de datos.\n\n¿Estás seguro de que quieres continuar?')) {
-      return;
-    }
-
-    setIsClearingDatabase(true);
-    try {
-      const response = await fetch('http://localhost:8080/api/trips/clear-database', {
-        method: 'DELETE',
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        alert(`✅ Base de datos limpiada exitosamente\n\n- Viajes eliminados: ${result.tripsDeleted}\n- Producciones eliminadas: ${result.productionsDeleted}\n\nPuedes proceder con la nueva importación.`);
-      } else {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-    } catch (error) {
-      console.error('Error clearing database:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      alert(`❌ Error al limpiar la base de datos:\n\n${errorMessage}\n\nVerifica que el backend esté ejecutándose en http://localhost:8080`);
-    } finally {
-      setIsClearingDatabase(false);
-    }
-  };
-
   const handleUpload = async () => {
     if (!file) {
       alert('Por favor selecciona un archivo primero.');
@@ -195,7 +169,6 @@ const CsvImport: React.FC<CsvImportProps> = ({ onImportSuccess, onImportError, o
             <p>• Total de líneas: {importStats.totalLines}</p>
             <p>• Líneas válidas: {importStats.validLines}</p>
             <p>• Líneas inválidas: {importStats.invalidLines}</p>
-            <p>• Tamaño del archivo: {(importStats.fileSize / 1024 / 1024).toFixed(2)} MB</p>
             {importStats.invalidLines > 0 && (
               <p className="text-orange-600 font-medium">
                 ⚠️ {importStats.invalidLines} líneas no pudieron ser procesadas
@@ -242,26 +215,6 @@ const CsvImport: React.FC<CsvImportProps> = ({ onImportSuccess, onImportError, o
         >
           Cancelar
         </button>
-      </div>
-
-      <div className="mt-4 pt-4 border-t border-gray-200">
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-600">
-            <p className="font-medium">Herramientas de Base de Datos:</p>
-            <p className="text-xs text-gray-500">Limpia la base de datos antes de una nueva importación</p>
-          </div>
-          <button
-            onClick={handleClearDatabase}
-            disabled={isClearingDatabase || isUploading || isAnalyzing}
-            className={`px-4 py-2 rounded-md font-medium transition-colors ${
-              isClearingDatabase || isUploading || isAnalyzing
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-red-600 text-white hover:bg-red-700'
-            }`}
-          >
-            {isClearingDatabase ? 'Limpiando...' : '🧹 Limpiar Base de Datos'}
-          </button>
-        </div>
       </div>
 
       {showCitiesModal && (

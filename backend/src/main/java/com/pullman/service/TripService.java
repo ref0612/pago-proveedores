@@ -121,4 +121,11 @@ public class TripService {
     public List<Trip> findByServiceCode(String serviceCode) {
         return tripRepository.findByServiceCode(serviceCode);
     }
+    
+    // Método para eliminar todos los viajes
+    public long deleteAll() {
+        long count = tripRepository.count();
+        tripRepository.deleteAll();
+        return count;
+    }
 } 
