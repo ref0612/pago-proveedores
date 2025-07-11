@@ -5,7 +5,10 @@ import com.pullman.domain.Trip;
 import com.pullman.domain.Zone;
 import com.pullman.domain.Route;
 import com.pullman.domain.Entrepreneur;
+import com.pullman.domain.User;
 import com.pullman.service.ProductionService;
+import com.pullman.service.LiquidationService;
+import com.pullman.service.UserService;
 import com.pullman.repository.TripRepository;
 import com.pullman.repository.ZoneRepository;
 import com.pullman.repository.RouteRepository;
@@ -40,6 +43,12 @@ public class ProductionController {
     
     @Autowired
     private EntrepreneurRepository entrepreneurRepository;
+
+    @Autowired
+    private LiquidationService liquidationService;
+
+    @Autowired
+    private UserService userService;
 
     @GetMapping
     public List<Production> getAll() {
@@ -162,29 +171,50 @@ public class ProductionController {
     @PostMapping("/pendientes/{id}/validate")
     public ResponseEntity<?> validarProduccion(
             @PathVariable Long id,
-            @RequestBody Map<String, Object> payload) {
+            @RequestBody Map<String, Object> payload,
+            @RequestHeader("X-User-Email") String userEmail) {
         try {
-            boolean aprobado = (Boolean) payload.get("aprobado");
+            String nuevoEstatus = (String) payload.get("estatus");
             String comentarios = (String) payload.get("comentarios");
-            
+            if (nuevoEstatus == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "El campo 'estatus' es obligatorio"));
+            }
+            Optional<User> userOpt = userService.findByEmail(userEmail);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(403).body(Map.of("error", "Usuario no autenticado"));
+            }
+            User user = userOpt.get();
             Optional<Production> prodOpt = productionService.findById(id);
             if (prodOpt.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
-            
             Production prod = prodOpt.get();
-            prod.setValidado(aprobado);
+            String estadoActual = prod.isValidado() ? "APROBADO" : "PENDIENTE"; // Ajusta según tu lógica
+            // Restricciones de rol
+            if ("APROBADO".equals(estadoActual) && user.getRol() != User.Role.ADMIN) {
+                return ResponseEntity.status(403).body(Map.of("error", "Solo el rol ADMIN puede modificar una producción ya aprobada"));
+            }
+            if (!user.getRol().equals(User.Role.ADMIN)) {
+                if ("APROBADO".equals(estadoActual)) {
+                    return ResponseEntity.status(403).body(Map.of("error", "No puedes modificar una producción ya aprobada"));
+                }
+                if (!List.of("EN_REVISION", "APROBADO", "RECHAZADO").contains(nuevoEstatus)) {
+                    return ResponseEntity.status(403).body(Map.of("error", "No tienes permiso para asignar este estatus"));
+                }
+            }
+            // Actualizar estado y comentarios
             prod.setComentarios(comentarios);
+            prod.setValidado("APROBADO".equals(nuevoEstatus));
             prod.setFechaValidacion(LocalDate.now());
-            // TODO: Aquí podrías setear el usuario validador si tienes autenticación
-            // prod.setValidadoPor(userService.getCurrentUser());
-            
+            prod.setValidadoPor(user);
             Production savedProd = productionService.save(prod);
-            
+            // Crear liquidación si la producción fue aprobada
+            if ("APROBADO".equals(nuevoEstatus)) {
+                liquidationService.createIfNotExistsForProduction(savedProd);
+            }
             Map<String, Object> response = new HashMap<>();
-            response.put("message", aprobado ? "Producción aprobada exitosamente" : "Producción rechazada exitosamente");
+            response.put("message", "Estatus actualizado exitosamente");
             response.put("production", savedProd);
-            
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAuth } from './useAuth';
 
 export interface Validacion {
   id?: number;
@@ -15,6 +16,7 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api/prod
 export function useValidacionApi() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   // Obtener validaciones
   const fetchValidaciones = async (decena?: string, includeValidated: boolean = true): Promise<Validacion[]> => {
@@ -33,15 +35,18 @@ export function useValidacionApi() {
     }
   };
 
-  // Aprobar o rechazar validación
-  const validar = async (id: number, aprobado: boolean, comentarios: string): Promise<boolean> => {
+  // Aprobar o rechazar validación (ahora acepta estatus)
+  const validar = async (id: number, estatus: string, comentarios: string): Promise<boolean> => {
     setLoading(true);
     setError(null);
     try {
       const res = await fetch(`${API_URL}/${id}/validate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ aprobado, comentarios }),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Email': user?.email || '',
+        },
+        body: JSON.stringify({ estatus, comentarios }),
       });
       if (!res.ok) throw new Error('Error al validar producción');
       return true;

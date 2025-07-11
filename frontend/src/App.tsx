@@ -30,9 +30,9 @@ function RequireAuth({ children, roles }: { children: ReactElement, roles?: stri
 
 function AppContent() {
   const { user } = useAuth();
-  
+
   return (
-    <Router>
+    <Router key={user ? user.email : 'nouser'}>
       {user && <Navbar />}
       <Routes>
         <Route path="/login" element={<Login />} />

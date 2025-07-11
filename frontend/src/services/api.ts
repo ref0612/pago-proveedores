@@ -138,3 +138,10 @@ export const productionsApi = {
   getAprobadas: () => apiGet('/productions?validado=true'),
   // Puedes agregar más funciones según sea necesario
 };
+
+export const liquidationsApi = {
+  getAll: () => apiGet('/liquidations'),
+  getById: (id: number) => apiGet(`/liquidations/${id}`),
+  registrarPago: (id: number) => apiPost(`/liquidations/${id}/registrar-pago`),
+  aprobar: (id: number) => apiPost(`/liquidations/${id}/aprobar`),
+};

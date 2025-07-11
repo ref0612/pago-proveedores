@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { productionsApi } from '../../services/api';
+import { liquidationsApi } from '../../services/api';
 
-interface ProduccionAprobada {
+interface Liquidacion {
   id: number;
   decena: string;
-  total: number;
-  entrepreneur: { nombre: string };
+  monto: number;
+  empresario: string;
   validado: boolean;
   comentarios: string;
+  fechaPago?: string;
+  fechaAprobacion?: string;
+  comprobantePagoUrl?: string; // URL para descargar el comprobante (cuando el backend lo soporte)
 }
 
 function generarOpcionesDecenas(): string[] {
@@ -43,21 +46,19 @@ function getDecenaActual(): string {
 }
 
 export default function LiquidacionPagos() {
-  const [liquidaciones, setLiquidaciones] = useState<ProduccionAprobada[]>([]);
-  const [pago, setPago] = useState({ fechaPago: '', medioPago: '', comprobante: '' });
-  const [selected, setSelected] = useState<number | null>(null);
+  const [liquidaciones, setLiquidaciones] = useState<Liquidacion[]>([]);
   const [loading, setLoading] = useState(false);
   const [decenaSeleccionada, setDecenaSeleccionada] = useState<string>(getDecenaActual());
+  const [comprobanteFiles, setComprobanteFiles] = useState<Record<number, File | null>>({});
 
   useEffect(() => {
-    cargarProduccionesAprobadas();
+    cargarLiquidaciones();
   }, []);
 
-  const cargarProduccionesAprobadas = async () => {
+  const cargarLiquidaciones = async () => {
     setLoading(true);
     try {
-      // Obtener solo producciones validadas/aprobadas
-      const data = await productionsApi.getAprobadas();
+      const data = await liquidationsApi.getAll();
       setLiquidaciones(data);
     } catch (err) {
       setLiquidaciones([]);
@@ -68,6 +69,18 @@ export default function LiquidacionPagos() {
 
   // Filtrar por decena seleccionada y solo aprobadas
   const liquidacionesFiltradas = liquidaciones.filter(l => l.decena === decenaSeleccionada && l.validado === true);
+
+  // Manejar subida de comprobante (solo UI, backend después)
+  const handleComprobanteChange = (id: number, file: File | null) => {
+    setComprobanteFiles(prev => ({ ...prev, [id]: file }));
+  };
+
+  const handleSubirComprobante = async (id: number) => {
+    // Aquí se llamará al backend cuando esté listo
+    alert('Funcionalidad de subir comprobante pendiente de backend.');
+    setComprobanteFiles(prev => ({ ...prev, [id]: null }));
+    // await cargarLiquidaciones();
+  };
 
   return (
     <div className="p-8">
@@ -98,6 +111,8 @@ export default function LiquidacionPagos() {
               <th className="p-2">Decena</th>
               <th className="p-2">Empresario</th>
               <th className="p-2">Monto</th>
+              <th className="p-2">Fecha de Aprobación</th>
+              <th className="p-2">Fecha de Pago</th>
               <th className="p-2">Acciones</th>
             </tr>
           </thead>
@@ -105,15 +120,42 @@ export default function LiquidacionPagos() {
             {liquidacionesFiltradas.map((l) => (
               <tr key={l.id} className="border-t">
                 <td className="p-2">{l.decena}</td>
-                <td className="p-2">{l.entrepreneur?.nombre || '-'}</td>
-                <td className="p-2">${l.total?.toLocaleString() ?? 0}</td>
+                <td className="p-2">{l.empresario || '-'}</td>
+                <td className="p-2">${l.monto?.toLocaleString() ?? 0}</td>
+                <td className="p-2">{l.fechaAprobacion ? new Date(l.fechaAprobacion).toLocaleDateString() : '-'}</td>
+                <td className="p-2">{l.fechaPago ? new Date(l.fechaPago).toLocaleDateString() : '-'}</td>
                 <td className="p-2">
-                  <button className="bg-blue-600 text-white px-2 py-1 rounded">Registrar Pago</button>
+                  {l.comprobantePagoUrl ? (
+                    <a
+                      href={l.comprobantePagoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline"
+                    >
+                      Ver Comprobante
+                    </a>
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="file"
+                        accept="application/pdf,image/*"
+                        onChange={e => handleComprobanteChange(l.id, e.target.files?.[0] || null)}
+                        disabled={!!l.fechaPago}
+                      />
+                      <button
+                        className="bg-blue-600 text-white px-2 py-1 rounded"
+                        onClick={() => handleSubirComprobante(l.id)}
+                        disabled={!comprobanteFiles[l.id] || !!l.fechaPago}
+                      >
+                        Subir Comprobante
+                      </button>
+                    </div>
+                  )}
                 </td>
               </tr>
             ))}
             {liquidacionesFiltradas.length === 0 && !loading && (
-              <tr><td colSpan={4} className="text-center text-gray-400 p-4">No hay liquidaciones aprobadas para mostrar en esta decena.</td></tr>
+              <tr><td colSpan={6} className="text-center text-gray-400 p-4">No hay liquidaciones aprobadas para mostrar en esta decena.</td></tr>
             )}
           </tbody>
         </table>

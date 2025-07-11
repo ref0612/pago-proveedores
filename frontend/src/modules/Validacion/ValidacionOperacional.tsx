@@ -1,6 +1,7 @@
 import { useValidacionApi, Validacion } from '../../hooks/useValidacionApi';
 import { useAuth } from '../../hooks/useAuth';
 import { useState, useEffect } from 'react';
+import Modal from '../../components/Modal';
 
 // Utilidad para generar decenas (1, 2, 3) de los últimos 12 meses
 function generarOpcionesDecenas(): string[] {
@@ -69,6 +70,19 @@ export default function ValidacionOperacional() {
   // Estado de comentarios por fila
   const [comentarios, setComentarios] = useState<{ [id: string]: string }>({});
 
+  // Estados para el modal de cambio de estatus
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalIndex, setModalIndex] = useState<number | null>(null);
+  const [nuevoEstatus, setNuevoEstatus] = useState<string>('');
+
+  // Opciones de estatus
+  const opcionesEstatus = [
+    'PENDIENTE',
+    'EN_REVISION',
+    'APROBADO',
+    'RECHAZADO',
+  ];
+
   // Actualizar fechas cuando cambia la decena seleccionada
   useEffect(() => {
     if (decenaSeleccionada) {
@@ -103,49 +117,40 @@ export default function ValidacionOperacional() {
 
   const gananciaTotal = validacionesFiltradas.reduce((acc, v) => acc + v.total, 0);
 
-  const handleAprobar = async (i: number) => {
-    const v = validacionesFiltradas[i];
-    if (!v || !v.id) return;
-    
-    // Verificar permisos
-    if (v.validado && !canEditValidated()) {
-      alert('Solo los administradores pueden cambiar el estado de producciones ya validadas.');
-      return;
-    }
-    
-    const comentarioFila = comentarios[String(v.id)] || '';
-    const success = await validar(v.id, true, comentarioFila);
-    if (success) {
-      // Actualizar el estado local en lugar de recargar
-      setValidaciones(prev => prev.map(prod => 
-        prod.id === v.id 
-          ? { ...prod, validado: true, comentarios: comentarioFila }
-          : prod
-      ));
-      setComentarios(prev => ({ ...prev, [String(v.id)]: '' }));
-    }
+  const handleAbrirModal = (i: number) => {
+    setModalIndex(i);
+    setNuevoEstatus(validacionesFiltradas[i]?.validado ? 'APROBADO' : 'PENDIENTE');
+    setModalOpen(true);
   };
 
-  const handleRechazar = async (i: number) => {
-    const v = validacionesFiltradas[i];
+  const handleGuardarModal = async () => {
+    if (modalIndex === null) return;
+    const v = validacionesFiltradas[modalIndex];
     if (!v || !v.id) return;
-    
-    // Verificar permisos
+    // Restricciones de rol
     if (v.validado && !canEditValidated()) {
-      alert('Solo los administradores pueden cambiar el estado de producciones ya validadas.');
+      alert('Solo los administradores pueden cambiar el estado de producciones ya aprobadas.');
       return;
     }
-    
+    // Validar estatus permitido
+    if (!canEditValidated() && v.validado && nuevoEstatus !== 'APROBADO') {
+      alert('No puedes modificar una producción ya aprobada.');
+      return;
+    }
+    if (!canEditValidated() && !['EN_REVISION', 'APROBADO', 'RECHAZADO'].includes(nuevoEstatus)) {
+      alert('No tienes permiso para asignar este estatus.');
+      return;
+    }
     const comentarioFila = comentarios[String(v.id)] || '';
-    const success = await validar(v.id, false, comentarioFila);
+    const success = await validar(v.id, nuevoEstatus, comentarioFila);
     if (success) {
-      // Actualizar el estado local en lugar de recargar
-      setValidaciones(prev => prev.map(prod => 
-        prod.id === v.id 
-          ? { ...prod, validado: false, comentarios: comentarioFila }
+      setValidaciones(prev => prev.map(prod =>
+        prod.id === v.id
+          ? { ...prod, validado: nuevoEstatus === 'APROBADO', comentarios: comentarioFila }
           : prod
       ));
       setComentarios(prev => ({ ...prev, [String(v.id)]: '' }));
+      setModalOpen(false);
     }
   };
 
@@ -228,46 +233,15 @@ export default function ValidacionOperacional() {
                   {v.validado ? <span className="text-green-600 font-semibold">Aprobado</span> : <span className="text-yellow-600 font-semibold">Pendiente</span>}
                 </td>
                 <td className="p-2">
-                  <input
-                    className={`border p-1 text-xs ${v.validado && !canEditValidated() ? 'bg-gray-100' : ''}`}
-                    placeholder="Comentarios"
-                    value={v.id ? comentarios[String(v.id)] || v.comentarios || '' : ''}
-                    onChange={e => v.id && setComentarios(prev => ({ ...prev, [String(v.id)]: e.target.value }))}
-                    disabled={v.validado && !canEditValidated()}
-                  />
+                  <span>{v.comentarios || '-'}</span>
                 </td>
                 <td className="p-2">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex gap-2">
-                      <button 
-                        className={`px-2 py-1 rounded ${
-                          v.validado && !canEditValidated() 
-                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
-                            : 'bg-green-600 text-white hover:bg-green-700'
-                        }`}
-                        onClick={() => handleAprobar(i)}
-                        disabled={v.validado && !canEditValidated()}
-                        title={v.validado && !canEditValidated() ? 'Solo administradores pueden cambiar el estado' : 'Aprobar producción'}
-                      >
-                        Aprobar
-                      </button>
-                      <button 
-                        className={`px-2 py-1 rounded ${
-                          v.validado && !canEditValidated() 
-                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
-                            : 'bg-red-500 text-white hover:bg-red-600'
-                        }`}
-                        onClick={() => handleRechazar(i)}
-                        disabled={v.validado && !canEditValidated()}
-                        title={v.validado && !canEditValidated() ? 'Solo administradores pueden cambiar el estado' : 'Rechazar producción'}
-                      >
-                        Rechazar
-                      </button>
-                    </div>
-                    {v.validado && !canEditValidated() && (
-                      <span className="text-xs text-gray-500">Solo ADMIN puede editar</span>
-                    )}
-                  </div>
+                  <button
+                    className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                    onClick={() => handleAbrirModal(i)}
+                  >
+                    Cambiar estado
+                  </button>
                 </td>
               </tr>
             ))}
@@ -278,6 +252,49 @@ export default function ValidacionOperacional() {
         </table>
       </div>
       <div className="mt-4 text-xs text-gray-500">* Tras aprobar o rechazar, la edición queda bloqueada.</div>
+
+      {/* Modal de cambio de estatus */}
+      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title="Cambiar estatus de producción">
+        <div className="p-4">
+          <h2 className="text-lg font-bold mb-2">Cambiar estatus de producción</h2>
+          <div className="mb-2">
+            <label className="block text-sm font-medium mb-1">Nuevo estatus</label>
+            <select
+              className="border rounded px-2 py-1 w-full"
+              value={nuevoEstatus}
+              onChange={e => setNuevoEstatus(e.target.value)}
+              disabled={modalIndex !== null && validacionesFiltradas[modalIndex]?.validado && !canEditValidated()}
+            >
+              {opcionesEstatus.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+          <div className="mb-2">
+            <label className="block text-sm font-medium mb-1">Comentario</label>
+            <textarea
+              className="border rounded px-2 py-1 w-full"
+              value={modalIndex !== null && validacionesFiltradas[modalIndex]?.id ? comentarios[String(validacionesFiltradas[modalIndex].id)] || '' : ''}
+              onChange={e => {
+                if (modalIndex !== null && validacionesFiltradas[modalIndex]?.id) {
+                  setComentarios(prev => ({ ...prev, [String(validacionesFiltradas[modalIndex].id)]: e.target.value }));
+                }
+              }}
+              rows={3}
+            />
+          </div>
+          <div className="flex gap-2 justify-end mt-4">
+            <button className="px-3 py-1 rounded bg-gray-200" onClick={() => setModalOpen(false)}>Cancelar</button>
+            <button
+              className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
+              onClick={handleGuardarModal}
+              disabled={modalIndex !== null && validacionesFiltradas[modalIndex]?.validado && !canEditValidated()}
+            >
+              Guardar
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 } 

@@ -124,7 +124,7 @@ const CsvImport: React.FC<CsvImportProps> = ({ onImportSuccess, onImportError, o
         setUnconfiguredCities(unconfigured);
         setShowCitiesModal(true);
       } else {
-        alert(message);
+      alert(message);
       }
       onImportSuccess?.(importedData);
       setFile(null);
