@@ -40,6 +40,9 @@ export default function Navbar() {
           {user.canViewUsuarios && (
             <a href="/usuarios" className="hover:text-blue-200">Usuarios</a>
           )}
+          {user.rol === 'ADMIN' && (
+            <a href="/privileges" className="hover:text-blue-200">Privilegios</a>
+          )}
         </div>
         <div className="flex items-center space-x-4">
           <span className="text-sm">

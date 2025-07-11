@@ -6,6 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+
 import java.util.List;
 
 @RestController
@@ -15,8 +19,17 @@ public class EntrepreneurController {
     private EntrepreneurService entrepreneurService;
 
     @GetMapping
-    public List<Entrepreneur> getAll() {
-        return entrepreneurService.findAll();
+    public org.springframework.data.domain.Page<Entrepreneur> getAllEntrepreneurs(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size
+    ) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        return entrepreneurService.findAll(pageable);
+    }
+
+    @GetMapping("/paged")
+    public Page<Entrepreneur> getAllPaged(@PageableDefault(size = 20) Pageable pageable) {
+        return entrepreneurService.findAll(pageable);
     }
 
     @GetMapping("/{id}")

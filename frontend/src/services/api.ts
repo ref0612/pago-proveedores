@@ -97,19 +97,22 @@ export const uploadCsvFile = async (file: File) => {
 
 // Funciones específicas para viajes
 export const tripsApi = {
-  getAll: () => apiGet('/trips'),
+  getAll: async () => {
+    const response = await apiGet('/trips');
+    return response.content || response;
+  },
   getAllPaginated: (page = 0, size = 1000) => apiGet(`/trips/paginated?page=${page}&size=${size}`),
   getAllComplete: async () => {
     console.log('Cargando todos los viajes...');
     const allTrips: any[] = [];
     let page = 0;
-    let hasNext = true;
+    let last = false;
     
-    while (hasNext) {
+    while (!last) {
       console.log(`Cargando página ${page}...`);
       const response = await apiGet(`/trips/paginated?page=${page}&size=1000`);
       allTrips.push(...response.content);
-      hasNext = response.hasNext;
+      last = response.last;
       page++;
     }
     

@@ -17,6 +17,9 @@ import java.util.HashMap;
 import java.text.Normalizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 @RestController
 @RequestMapping("/api/zones")
@@ -39,12 +42,21 @@ public class ZoneController {
     }
 
     @GetMapping
-    public List<Zone> getAll() {
-        return zoneService.findAll();
+    public org.springframework.data.domain.Page<Zone> getAllZones(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size
+    ) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        return zoneService.findAll(pageable);
+    }
+
+    @GetMapping("/paged")
+    public Page<Zone> getAllPaged(@PageableDefault(size = 20) Pageable pageable) {
+        return zoneService.findAll(pageable);
     }
 
     @GetMapping("/unconfigured-tramos")
-    public List<Map<String, String>> getUnconfiguredTramos() {
+    public Map<String, List<Map<String, String>>> getUnconfiguredTramos() {
         // Obtener todos los tramos (origen-destino) presentes en viajes
         Set<String> tramosInTripsNorm = new HashSet<>();
         List<Map<String, String>> tramosInTripsOriginal = new ArrayList<>();
@@ -60,28 +72,35 @@ public class ZoneController {
             }
         });
         
-        // Obtener tramos ya configurados en zonas
+        // Obtener tramos ya configurados en zonas y rutas con zona nula
         Set<String> tramosConfiguradosNorm = new HashSet<>();
+        List<Map<String, String>> rutasSinZona = new ArrayList<>();
         routeRepository.findAll().forEach(route -> {
             if (route.getOrigen() != null && route.getDestino() != null) {
                 String key = normalize(route.getOrigen()) + "->" + normalize(route.getDestino());
                 tramosConfiguradosNorm.add(key);
+                if (route.getZona() == null) {
+                    Map<String, String> tramo = new HashMap<>();
+                    tramo.put("origen", route.getOrigen().trim());
+                    tramo.put("destino", route.getDestino().trim());
+                    rutasSinZona.add(tramo);
+                }
             }
         });
         
-        // Filtrar tramos no configurados
+        // Filtrar tramos no configurados (no existen como ruta)
         List<Map<String, String>> tramosNoConfigurados = new ArrayList<>();
         for (Map<String, String> tramo : tramosInTripsOriginal) {
             String key = normalize(tramo.get("origen")) + "->" + normalize(tramo.get("destino"));
             boolean configurado = tramosConfiguradosNorm.contains(key);
-            logger.info("Comparando tramo: {} -> {} | Normalizado: {} | Configurado: {}", tramo.get("origen"), tramo.get("destino"), key, configurado);
             if (!configurado) {
                 tramosNoConfigurados.add(tramo);
             }
         }
-        logger.info("Tramos configurados (normalizados): {}", tramosConfiguradosNorm);
-        logger.info("Tramos no configurados: {}", tramosNoConfigurados);
-        return tramosNoConfigurados;
+        Map<String, List<Map<String, String>>> resultado = new HashMap<>();
+        resultado.put("tramosNoConfigurados", tramosNoConfigurados);
+        resultado.put("rutasSinZona", rutasSinZona);
+        return resultado;
     }
 
     @GetMapping("/{id}")

@@ -3,6 +3,8 @@ package com.pullman.service;
 import com.pullman.domain.Route;
 import com.pullman.repository.RouteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,8 +15,8 @@ public class RouteService {
     @Autowired
     private RouteRepository routeRepository;
 
-    public List<Route> findAll() {
-        return routeRepository.findAll();
+    public Page<Route> findAll(Pageable pageable) {
+        return routeRepository.findAll(pageable);
     }
 
     public Optional<Route> findById(Long id) {
@@ -27,5 +29,9 @@ public class RouteService {
 
     public void deleteById(Long id) {
         routeRepository.deleteById(id);
+    }
+
+    public List<Route> findByZonaId(Long zonaId) {
+        return routeRepository.findByZonaId(zonaId);
     }
 } 

@@ -3,6 +3,8 @@ package com.pullman.service;
 import com.pullman.domain.Payment;
 import com.pullman.repository.PaymentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,8 +15,8 @@ public class PaymentService {
     @Autowired
     private PaymentRepository paymentRepository;
 
-    public List<Payment> findAll() {
-        return paymentRepository.findAll();
+    public Page<Payment> findAll(Pageable pageable) {
+        return paymentRepository.findAll(pageable);
     }
 
     public Optional<Payment> findById(Long id) {

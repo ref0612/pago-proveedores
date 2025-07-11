@@ -23,9 +23,10 @@ export function useRecorridosApi() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(API_URL);
+      const res = await fetch(`${API_URL}?page=0&size=1000`);
       if (!res.ok) throw new Error('Error al obtener recorridos');
-      return await res.json();
+      const data = await res.json();
+      return data.content || [];
     } catch (err: any) {
       setError(err.message);
       return [];

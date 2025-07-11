@@ -56,13 +56,33 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     @Query("SELECT SUM(t.branchRevenue + t.roadRevenue) FROM Trip t WHERE t.travelDate = :date")
     Double getTotalRevenueByDate(@Param("date") LocalDate date);
     
-    // Consulta para obtener estadísticas por empresa
-    @Query("SELECT t.companyName, SUM(t.branchRevenue + t.roadRevenue) as totalRevenue, COUNT(t) as tripCount " +
-           "FROM Trip t WHERE t.travelDate = :date GROUP BY t.companyName")
-    List<Object[]> getRevenueByCompany(@Param("date") LocalDate date);
+    // Consulta optimizada para buscar viajes por empresa en un rango de fechas
+    @Query("SELECT t FROM Trip t WHERE t.companyName = :companyName AND t.travelDate BETWEEN :startDate AND :endDate")
+    List<Trip> findByCompanyNameAndTravelDateBetween(@Param("companyName") String companyName, 
+                                                    @Param("startDate") LocalDate startDate, 
+                                                    @Param("endDate") LocalDate endDate);
     
-    // Consulta para obtener estadísticas por ruta
-    @Query("SELECT t.routeName, SUM(t.branchRevenue + t.roadRevenue) as totalRevenue, COUNT(t) as tripCount " +
-           "FROM Trip t WHERE t.travelDate = :date GROUP BY t.routeName")
-    List<Object[]> getRevenueByRoute(@Param("date") LocalDate date);
+    // Consulta optimizada para obtener estadísticas de ingresos por empresa
+    @Query("SELECT t.companyName, SUM(t.branchRevenue + t.roadRevenue) FROM Trip t WHERE t.travelDate BETWEEN :startDate AND :endDate GROUP BY t.companyName")
+    List<Object[]> getRevenueByCompanyBetweenDates(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+    
+    // Consulta optimizada para obtener viajes únicos por empresa y fecha
+    @Query("SELECT DISTINCT t.companyName, t.travelDate FROM Trip t WHERE t.travelDate BETWEEN :startDate AND :endDate")
+    List<Object[]> getUniqueTripsByCompanyAndDate(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+    
+    // Consulta optimizada para contar viajes por empresa
+    @Query("SELECT t.companyName, COUNT(t) FROM Trip t WHERE t.travelDate BETWEEN :startDate AND :endDate GROUP BY t.companyName")
+    List<Object[]> getTripCountByCompany(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+    
+    // Consulta optimizada para obtener viajes con ingresos manuales
+    @Query("SELECT t FROM Trip t WHERE t.manualIncome IS NOT NULL AND t.manualIncome != '' AND t.travelDate BETWEEN :startDate AND :endDate")
+    List<Trip> findTripsWithManualIncome(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+    
+    // Consulta optimizada para verificar si existe un viaje
+    @Query("SELECT COUNT(t) > 0 FROM Trip t WHERE t.travelDate = :travelDate AND t.departureTime = :departureTime AND t.origin = :origin AND t.destination = :destination AND t.busNumber = :busNumber")
+    boolean existsByUniqueCriteria(@Param("travelDate") LocalDate travelDate, 
+                                  @Param("departureTime") LocalTime departureTime,
+                                  @Param("origin") String origin, 
+                                  @Param("destination") String destination, 
+                                  @Param("busNumber") String busNumber);
 } 

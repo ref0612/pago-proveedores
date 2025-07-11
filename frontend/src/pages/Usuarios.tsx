@@ -22,17 +22,23 @@ export default function Usuarios() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   useEffect(() => {
+    console.log('useEffect Usuarios');
     fetchUsers();
+    // eslint-disable-next-line
   }, []);
 
   const fetchUsers = async () => {
+    setLoading(true);
+    setError('');
     try {
       const response = await fetch('http://localhost:8080/api/users');
       if (response.ok) {
         const data = await response.json();
-        setUsuarios(data);
+        // Solo actualiza si los datos realmente cambiaron
+        setUsuarios(prev => JSON.stringify(prev) !== JSON.stringify(data) ? data : prev);
       } else {
         setError('Error al cargar usuarios');
       }
@@ -44,6 +50,8 @@ export default function Usuarios() {
   };
 
   const handleUpdateUser = async (updatedUser: User) => {
+    setError('');
+    setUpdatingId(updatedUser.id);
     try {
       const response = await fetch(`http://localhost:8080/api/users/${updatedUser.id}`, {
         method: 'PUT',
@@ -54,22 +62,52 @@ export default function Usuarios() {
       });
 
       if (response.ok) {
-        setUsuarios(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+        const userFromServer = await response.json();
+        setUsuarios(prev => prev.map(u => u.id === userFromServer.id ? userFromServer : u));
         setEditingUser(null);
       } else {
         setError('Error al actualizar usuario');
       }
     } catch (error) {
       setError('Error de conexión');
+    } finally {
+      setUpdatingId(null);
     }
   };
 
-  const handleTogglePrivilege = (userId: number, privilege: keyof User) => {
+  // Habilitar todos los privilegios para un usuario (ADMIN)
+  const handleEnableAllPrivileges = (userId: number) => {
     const userToUpdate = usuarios.find(u => u.id === userId);
     if (userToUpdate) {
-      const updatedUser = { ...userToUpdate };
-      (updatedUser as any)[privilege] = !(updatedUser as any)[privilege];
+      const updatedUser = {
+        ...userToUpdate,
+        canViewTrips: true,
+        canViewRecorridos: true,
+        canViewProduccion: true,
+        canViewValidacion: true,
+        canViewLiquidacion: true,
+        canViewReportes: true,
+        canViewUsuarios: true,
+      };
       handleUpdateUser(updatedUser);
+    }
+  };
+
+  const handleTogglePrivilege = (userId: number, privilege: keyof User, e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+    const userToUpdate = usuarios.find(u => u.id === userId);
+    if (userToUpdate) {
+      const valorActual = (userToUpdate as any)[privilege];
+      const nuevoValor = !valorActual;
+      console.log(`Intentando cambiar privilegio '${privilege}' para usuario ${userId}: actual=${valorActual}, nuevo=${nuevoValor}`);
+      // Solo actualizar si el valor realmente cambia
+      if (valorActual !== nuevoValor) {
+        const updatedUser = { ...userToUpdate, [privilege]: nuevoValor };
+        console.log('Disparando update de usuario:', updatedUser);
+        handleUpdateUser(updatedUser);
+      } else {
+        console.log('No se dispara update porque el valor no cambió');
+      }
     }
   };
 
@@ -83,10 +121,12 @@ export default function Usuarios() {
     );
   }
 
-  if (loading) {
+  // Solo mostrar loading si no se está editando
+  if (loading && !editingUser) {
     return <div className="p-8">Cargando usuarios...</div>;
   }
 
+  console.log('Render Usuarios');
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-6">Gestión de Usuarios</h1>
@@ -106,13 +146,6 @@ export default function Usuarios() {
               <th className="px-4 py-2 border">Email</th>
               <th className="px-4 py-2 border">Rol</th>
               <th className="px-4 py-2 border">Activo</th>
-              <th className="px-4 py-2 border">Viajes</th>
-                              <th className="px-4 py-2 border">Zonas</th>
-              <th className="px-4 py-2 border">Producción</th>
-              <th className="px-4 py-2 border">Validación</th>
-              <th className="px-4 py-2 border">Liquidación</th>
-              <th className="px-4 py-2 border">Reportes</th>
-              <th className="px-4 py-2 border">Usuarios</th>
               <th className="px-4 py-2 border">Acciones</th>
             </tr>
           </thead>
@@ -136,62 +169,6 @@ export default function Usuarios() {
                   <span className={`px-2 py-1 rounded text-xs ${usuario.activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                     {usuario.activo ? 'Activo' : 'Inactivo'}
                   </span>
-                </td>
-                <td className="px-4 py-2 border text-center">
-                  <button
-                    onClick={() => handleTogglePrivilege(usuario.id, 'canViewTrips')}
-                    className={`px-2 py-1 rounded text-xs ${usuario.canViewTrips ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-700'}`}
-                  >
-                    {usuario.canViewTrips ? 'ON' : 'OFF'}
-                  </button>
-                </td>
-                <td className="px-4 py-2 border text-center">
-                  <button
-                    onClick={() => handleTogglePrivilege(usuario.id, 'canViewRecorridos')}
-                    className={`px-2 py-1 rounded text-xs ${usuario.canViewRecorridos ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-700'}`}
-                  >
-                    {usuario.canViewRecorridos ? 'ON' : 'OFF'}
-                  </button>
-                </td>
-                <td className="px-4 py-2 border text-center">
-                  <button
-                    onClick={() => handleTogglePrivilege(usuario.id, 'canViewProduccion')}
-                    className={`px-2 py-1 rounded text-xs ${usuario.canViewProduccion ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-700'}`}
-                  >
-                    {usuario.canViewProduccion ? 'ON' : 'OFF'}
-                  </button>
-                </td>
-                <td className="px-4 py-2 border text-center">
-                  <button
-                    onClick={() => handleTogglePrivilege(usuario.id, 'canViewValidacion')}
-                    className={`px-2 py-1 rounded text-xs ${usuario.canViewValidacion ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-700'}`}
-                  >
-                    {usuario.canViewValidacion ? 'ON' : 'OFF'}
-                  </button>
-                </td>
-                <td className="px-4 py-2 border text-center">
-                  <button
-                    onClick={() => handleTogglePrivilege(usuario.id, 'canViewLiquidacion')}
-                    className={`px-2 py-1 rounded text-xs ${usuario.canViewLiquidacion ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-700'}`}
-                  >
-                    {usuario.canViewLiquidacion ? 'ON' : 'OFF'}
-                  </button>
-                </td>
-                <td className="px-4 py-2 border text-center">
-                  <button
-                    onClick={() => handleTogglePrivilege(usuario.id, 'canViewReportes')}
-                    className={`px-2 py-1 rounded text-xs ${usuario.canViewReportes ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-700'}`}
-                  >
-                    {usuario.canViewReportes ? 'ON' : 'OFF'}
-                  </button>
-                </td>
-                <td className="px-4 py-2 border text-center">
-                  <button
-                    onClick={() => handleTogglePrivilege(usuario.id, 'canViewUsuarios')}
-                    className={`px-2 py-1 rounded text-xs ${usuario.canViewUsuarios ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-700'}`}
-                  >
-                    {usuario.canViewUsuarios ? 'ON' : 'OFF'}
-                  </button>
                 </td>
                 <td className="px-4 py-2 border text-center">
                   <button
@@ -235,7 +212,20 @@ export default function Usuarios() {
                 <label className="block text-sm font-medium mb-1">Rol</label>
                 <select
                   value={editingUser.rol}
-                  onChange={(e) => setEditingUser({...editingUser, rol: e.target.value as any})}
+                  onChange={(e) => {
+                    const newRol = e.target.value as 'ADMIN' | 'VALIDADOR' | 'MIEMBRO' | 'INVITADO';
+                    setEditingUser({
+                      ...editingUser,
+                      rol: newRol,
+                      canViewTrips: newRol === 'ADMIN' ? true : false,
+                      canViewRecorridos: newRol === 'ADMIN' ? true : false,
+                      canViewProduccion: newRol === 'ADMIN' ? true : false,
+                      canViewValidacion: newRol === 'ADMIN' ? true : false,
+                      canViewLiquidacion: newRol === 'ADMIN' ? true : false,
+                      canViewReportes: newRol === 'ADMIN' ? true : false,
+                      canViewUsuarios: newRol === 'ADMIN' ? true : false,
+                    });
+                  }}
                   className="w-full border rounded px-3 py-2"
                 >
                   <option value="ADMIN">ADMIN</option>

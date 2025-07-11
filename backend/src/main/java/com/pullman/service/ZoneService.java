@@ -3,6 +3,8 @@ package com.pullman.service;
 import com.pullman.domain.Zone;
 import com.pullman.repository.ZoneRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,8 +15,8 @@ public class ZoneService {
     @Autowired
     private ZoneRepository zoneRepository;
 
-    public List<Zone> findAll() {
-        return zoneRepository.findAll();
+    public Page<Zone> findAll(Pageable pageable) {
+        return zoneRepository.findAll(pageable);
     }
 
     public Optional<Zone> findById(Long id) {

@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Reportes from './pages/Reportes';
 import Usuarios from './pages/Usuarios';
 import TripsPage from './pages/TripsPage';
+import Privileges from './pages/Privileges';
 import Navbar from './components/Navbar';
 import { RegistroRecorridos } from './modules/Recorridos';
 import { CalculoProduccion } from './modules/Produccion';
@@ -74,6 +75,11 @@ function AppContent() {
         <Route path="/usuarios" element={
           <RequireAuth roles={['ADMIN']}>
             <Usuarios />
+          </RequireAuth>
+        } />
+        <Route path="/privileges" element={
+          <RequireAuth roles={['ADMIN']}>
+            <Privileges />
           </RequireAuth>
         } />
         <Route path="/" element={<Navigate to="/login" />} />

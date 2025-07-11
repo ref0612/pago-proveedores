@@ -7,6 +7,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -14,9 +17,9 @@ public class PaymentController {
     @Autowired
     private PaymentService paymentService;
 
-    @GetMapping
-    public List<Payment> getAll() {
-        return paymentService.findAll();
+    @GetMapping("/paged")
+    public Page<Payment> getAllPaged(@PageableDefault(size = 20) Pageable pageable) {
+        return paymentService.findAll(pageable);
     }
 
     @GetMapping("/{id}")

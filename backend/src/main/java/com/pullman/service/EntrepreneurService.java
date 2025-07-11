@@ -3,6 +3,8 @@ package com.pullman.service;
 import com.pullman.domain.Entrepreneur;
 import com.pullman.repository.EntrepreneurRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,8 +15,8 @@ public class EntrepreneurService {
     @Autowired
     private EntrepreneurRepository entrepreneurRepository;
 
-    public List<Entrepreneur> findAll() {
-        return entrepreneurRepository.findAll();
+    public Page<Entrepreneur> findAll(Pageable pageable) {
+        return entrepreneurRepository.findAll(pageable);
     }
 
     public Optional<Entrepreneur> findById(Long id) {

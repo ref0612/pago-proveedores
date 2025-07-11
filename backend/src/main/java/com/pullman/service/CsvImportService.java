@@ -142,10 +142,25 @@ public class CsvImportService {
         List<Entrepreneur> entrepreneurs = entrepreneurRepository.findAll();
         
         for (String decena : decenasImportadas) {
-            // Obtener los viajes de esa decena
-            List<Trip> tripsDecena = allTrips.stream()
-                .filter(trip -> trip.getTravelDate() != null && calcularDecena(trip.getTravelDate()).equals(decena))
-                .toList();
+            // Calcular rango de fechas de la decena para consulta optimizada
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            int decenaNum = Integer.parseInt(decena.substring(0, 1));
+            int mes = Integer.parseInt(decena.substring(1, 3));
+            int anio = Integer.parseInt(decena.substring(3));
+            int diaInicio = 1;
+            int diaFin = 10;
+            if (decenaNum == 2) {
+                diaInicio = 11;
+                diaFin = 20;
+            } else if (decenaNum == 3) {
+                diaInicio = 21;
+                diaFin = java.time.YearMonth.of(anio, mes).lengthOfMonth();
+            }
+            LocalDate desde = LocalDate.of(anio, mes, diaInicio);
+            LocalDate hasta = LocalDate.of(anio, mes, diaFin);
+            
+            // Obtener viajes optimizados por rango de fechas
+            List<Trip> tripsDecena = tripRepository.findByTravelDateBetween(desde, hasta);
             int count = productionService.generateProductionsForDecena(decena, tripsDecena, routes, zones, entrepreneurs);
             System.out.println("Producciones generadas para decena " + decena + ": " + count);
         }
@@ -176,13 +191,24 @@ public class CsvImportService {
         if (trip.getTravelDate() != null && trip.getDepartureTime() != null && 
             trip.getOrigin() != null && trip.getDestination() != null && trip.getBusNumber() != null) {
             
-            return tripRepository.findByTravelDateAndDepartureTimeAndOriginAndDestinationAndBusNumber(
+            // Usar la consulta optimizada para verificar existencia
+            boolean exists = tripRepository.existsByUniqueCriteria(
                 trip.getTravelDate(),
                 trip.getDepartureTime(),
                 trip.getOrigin().trim(),
                 trip.getDestination().trim(),
                 trip.getBusNumber().trim()
             );
+            
+            if (exists) {
+                return tripRepository.findByTravelDateAndDepartureTimeAndOriginAndDestinationAndBusNumber(
+                    trip.getTravelDate(),
+                    trip.getDepartureTime(),
+                    trip.getOrigin().trim(),
+                    trip.getDestination().trim(),
+                    trip.getBusNumber().trim()
+                );
+            }
         }
         return null;
     }

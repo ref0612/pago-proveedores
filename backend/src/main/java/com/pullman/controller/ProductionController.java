@@ -25,6 +25,9 @@ import java.util.stream.Collectors;
 import java.time.format.DateTimeFormatter;
 import java.text.Normalizer;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 @RestController
 @RequestMapping("/api/productions")
@@ -55,13 +58,29 @@ public class ProductionController {
         return productionService.findAll();
     }
 
+    @GetMapping("/paged")
+    public Page<Production> getAllPaged(@PageableDefault(size = 20) Pageable pageable) {
+        return productionService.findAll(pageable);
+    }
+
     @GetMapping("/pendientes")
     public List<Production> getPendientes(@RequestParam(value = "decena", required = false) String decena,
                                         @RequestParam(value = "includeValidated", defaultValue = "false") boolean includeValidated) {
-        return productionService.findAll().stream()
-            .filter(p -> includeValidated || !p.isValidado())
-            .filter(p -> decena == null || decena.equals(p.getDecena()))
-            .toList();
+        if (decena != null && !includeValidated) {
+            // Usar consulta optimizada para decena específica y solo pendientes
+            return productionService.findByDecena(decena).stream()
+                .filter(p -> !p.isValidado())
+                .toList();
+        } else if (!includeValidated) {
+            // Usar consulta optimizada para solo pendientes
+            return productionService.findPendientes();
+        } else {
+            // Filtrar en memoria para casos complejos
+            return productionService.findAll().stream()
+                .filter(p -> includeValidated || !p.isValidado())
+                .filter(p -> decena == null || decena.equals(p.getDecena()))
+                .toList();
+        }
     }
 
     @PostMapping("/generate")
@@ -85,16 +104,8 @@ public class ProductionController {
             LocalDate desde = LocalDate.of(anio, mes, diaInicio);
             LocalDate hasta = LocalDate.of(anio, mes, diaFin);
 
-            // Obtener todos los viajes
-            List<Trip> allTrips = tripRepository.findAll();
-            // Filtrar viajes por travelDate en el rango de la decena
-            List<Trip> tripsInDecena = allTrips.stream()
-                .filter(trip -> {
-                    if (trip.getTravelDate() == null) return false;
-                    LocalDate fechaViaje = trip.getTravelDate();
-                    return (fechaViaje.compareTo(desde) >= 0 && fechaViaje.compareTo(hasta) <= 0);
-                })
-                .collect(Collectors.toList());
+            // Obtener viajes optimizados por rango de fechas
+            List<Trip> tripsInDecena = tripRepository.findByTravelDateBetween(desde, hasta);
 
             // Obtener todas las zonas y rutas
             List<Zone> zones = zoneRepository.findAll();
@@ -104,14 +115,25 @@ public class ProductionController {
             // Crear mapa de empresarios por nombre
             Map<String, Entrepreneur> entrepreneurMap = entrepreneurs.stream()
                 .collect(Collectors.toMap(Entrepreneur::getNombre, e -> e));
-            // Agrupar viajes por empresario
+            // Agrupar viajes por empresario usando normalización
             Map<String, List<Trip>> tripsByEntrepreneur = tripsInDecena.stream()
                 .filter(trip -> trip.getCompanyName() != null && !trip.getCompanyName().isEmpty())
-                .collect(Collectors.groupingBy(Trip::getCompanyName));
+                .collect(Collectors.groupingBy(trip -> normalize(trip.getCompanyName())));
+            // Mapa para mostrar el nombre original de la empresa
+            Map<String, String> originalNames = new HashMap<>();
+            tripsInDecena.stream()
+                .filter(trip -> trip.getCompanyName() != null && !trip.getCompanyName().isEmpty())
+                .forEach(trip -> {
+                    String norm = normalize(trip.getCompanyName());
+                    if (!originalNames.containsKey(norm)) {
+                        originalNames.put(norm, trip.getCompanyName());
+                    }
+                });
             int generatedCount = 0;
             // Para cada empresario, calcular y guardar producción
             for (Map.Entry<String, List<Trip>> entry : tripsByEntrepreneur.entrySet()) {
-                String entrepreneurName = entry.getKey();
+                String entrepreneurNameNorm = entry.getKey();
+                String entrepreneurName = originalNames.getOrDefault(entrepreneurNameNorm, entrepreneurNameNorm);
                 List<Trip> trips = entry.getValue();
                 double totalIngresos = 0;
                 double totalGanancia = 0;
@@ -140,12 +162,9 @@ public class ProductionController {
                     entrepreneur = entrepreneurRepository.save(entrepreneur);
                     entrepreneurMap.put(entrepreneurName, entrepreneur);
                 }
-                final Entrepreneur finalEntrepreneur = entrepreneur;
-                boolean productionExists = productionService.findAll().stream()
-                    .anyMatch(p -> p.getEntrepreneur() != null && 
-                                 p.getEntrepreneur().getId().equals(finalEntrepreneur.getId()) && 
-                                 decena.equals(p.getDecena()));
-                if (!productionExists && totalGanancia > 0) {
+                            // Verificar si existe la producción de manera optimizada
+            boolean productionExists = productionService.existsByEntrepreneurAndDecena(entrepreneur.getId(), decena);
+            if (!productionExists && totalGanancia > 0) {
                     Production production = new Production();
                     production.setDecena(decena);
                     production.setTotal(totalGanancia);
@@ -262,6 +281,15 @@ public class ProductionController {
             .replaceAll("[\\p{InCombiningDiacriticalMarks}]", "")
             .replaceAll("\\s+", " ")
             .trim();
+    }
+
+    private static String normalize(String str) {
+        if (str == null) return "";
+        String n = java.text.Normalizer.normalize(str.toLowerCase(), java.text.Normalizer.Form.NFD)
+            .replaceAll("[\\p{InCombiningDiacriticalMarks}]+", "")
+            .replaceAll("\\s+", " ")
+            .trim();
+        return n;
     }
 
     @PutMapping("/{id}")

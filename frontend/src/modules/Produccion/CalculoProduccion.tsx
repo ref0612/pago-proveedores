@@ -36,12 +36,13 @@ interface Production {
   entrepreneur: { nombre: string };
 }
 
-// Función para normalizar strings (minúsculas, sin tildes, sin espacios extra)
+// Función para normalizar strings (idéntica a backend, compatible universalmente)
 function normalize(str: string): string {
+  if (!str) return '';
   return str
-    .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') // Eliminar tildes
+    .toLowerCase()
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -128,12 +129,12 @@ const CalculoProduccion: React.FC = () => {
 
   useEffect(() => {
     fetchTrips();
-    fetch('/api/zones')
+    fetch('/api/zones?page=0&size=1000')
       .then(res => res.json())
-      .then(data => setZones(data));
-    fetch('/api/routes')
+      .then(data => setZones(data.content || data));
+    fetch('/api/routes?page=0&size=1000')
       .then(res => res.json())
-      .then(data => setRoutes(data));
+      .then(data => setRoutes(data.content || []));
     fetch('/api/productions')
       .then(res => res.json())
       .then(data => setProducciones(data));
@@ -226,12 +227,41 @@ const CalculoProduccion: React.FC = () => {
   // const { desde: fechaDesde, hasta: fechaHasta } = getFechasDecena(decenaSeleccionada);
 
   // Filtrar viajes por decena seleccionada
+  const { desde, hasta } = getFechasDecena(decenaSeleccionada);
   const viajesParaCalcular = trips.filter(v => {
     if (!v.travelDate) return false;
     const fechaViaje = v.travelDate.slice(0, 10); // formato YYYY-MM-DD
-    const { desde, hasta } = getFechasDecena(decenaSeleccionada);
     return fechaViaje >= desde && fechaViaje <= hasta;
   });
+
+  // DEBUG: Logs para depuración de filtro de fechas
+  if (trips.length > 0) {
+    const fueraDeRango = trips.filter(v => {
+      if (!v.travelDate) return false;
+      const fechaViaje = v.travelDate.slice(0, 10);
+      return !(fechaViaje >= desde && fechaViaje <= hasta);
+    });
+    // Solo mostrar si hay decena seleccionada
+    console.log('Decena seleccionada:', decenaSeleccionada, '| Rango:', desde, 'a', hasta);
+    console.log('Total viajes:', trips.length, '| Viajes en decena:', viajesParaCalcular.length, '| Fuera de rango:', fueraDeRango.length);
+    if (fueraDeRango.length > 0) {
+      console.log('Fechas fuera de rango:', fueraDeRango.map(v => v.travelDate));
+    }
+    // Mostrar fechas límite presentes
+    const fechasEnDecena = viajesParaCalcular
+      .filter(v => v.travelDate)
+      .map(v => v.travelDate!.slice(0, 10));
+    if (fechasEnDecena.includes(desde)) {
+      console.log('Incluye fecha de inicio:', desde);
+    } else {
+      console.warn('NO incluye fecha de inicio:', desde);
+    }
+    if (fechasEnDecena.includes(hasta)) {
+      console.log('Incluye fecha de fin:', hasta);
+    } else {
+      console.warn('NO incluye fecha de fin:', hasta);
+    }
+  }
 
   // Validar que la fecha "hasta" sea mayor o igual que "desde"
   const fechaValida = true; // Ya no se usa fechaDesde y fechaHasta directamente
@@ -240,9 +270,6 @@ const CalculoProduccion: React.FC = () => {
   // Usar todos los viajes para calcular por defecto
   // const viajesParaCalcular = trips; // This line is now redundant as viajesParaCalcular is defined above
 
-  // Agrupar viajes por empresa
-  const empresarios = Array.from(new Set(viajesParaCalcular.map(v => v.companyName)));
-
   // Buscar zona por origen/destino
   const getZonaPorTramo = (origen: string, destino: string): Zone | null => {
     const normOrigen = normalize(origen);
@@ -250,6 +277,7 @@ const CalculoProduccion: React.FC = () => {
     for (const route of routes) {
       const rOrig = normalize(route.origen);
       const rDest = normalize(route.destino);
+      // Comparar ambos sentidos, idéntico a backend
       if (
         (rOrig === normOrigen && rDest === normDestino) ||
         (rOrig === normDestino && rDest === normOrigen)
@@ -260,20 +288,56 @@ const CalculoProduccion: React.FC = () => {
     return null;
   };
 
+  // Agrupar viajes por empresa usando normalización igual que backend
+  const normalizarEmpresa = (nombre: string) => normalize(nombre);
+  const empresasNormalizadas = Array.from(new Set(viajesParaCalcular
+    .filter(v => v.companyName && v.companyName.trim() !== "")
+    .map(v => normalizarEmpresa(v.companyName!))));
+
+  // Mapear nombre normalizado a nombre original (para mostrar)
+  const mapEmpresaOriginal = new Map<string, string>();
+  viajesParaCalcular.forEach(v => {
+    if (v.companyName && v.companyName.trim() !== "") {
+      const norm = normalizarEmpresa(v.companyName);
+      if (!mapEmpresaOriginal.has(norm)) {
+        mapEmpresaOriginal.set(norm, v.companyName);
+      }
+    }
+  });
+
   // Calcular resumen por empresario (desde viajes)
-  const resumenCalculado = empresarios.map(emp => {
-    const viajesEmp = viajesParaCalcular.filter(v => v.companyName === emp);
+  const resumenCalculado = empresasNormalizadas.map(empNorm => {
+    const viajesEmp = viajesParaCalcular.filter(v => normalizarEmpresa(v.companyName!) === empNorm);
     let totalServicios = 0;
     let totalIngresos = 0;
     let totalGanancia = 0;
+    let sinZona = 0;
+    let conZona = 0;
+    const viajesSinZona: any[] = [];
     viajesEmp.forEach(v => {
       const zona = getZonaPorTramo(v.origin, v.destination);
       const porcentaje = zona ? zona.porcentaje : 0;
       totalServicios++;
       totalIngresos += v.totalIngresos;
-      totalGanancia += v.totalIngresos * (porcentaje / 100);
+      if (zona) {
+        totalGanancia += v.totalIngresos * (porcentaje / 100);
+        conZona++;
+      } else {
+        sinZona++;
+        viajesSinZona.push({
+          origin: v.origin,
+          destination: v.destination,
+          companyName: v.companyName,
+          travelDate: v.travelDate
+        });
+      }
     });
-    return { emp, totalServicios, totalIngresos, totalGanancia };
+    // LOG de depuración por empresa
+    if (viajesSinZona.length > 0) {
+      console.warn(`Viajes SIN zona para empresa ${mapEmpresaOriginal.get(empNorm) || empNorm}:`, viajesSinZona);
+    }
+    console.log(`Empresa: ${mapEmpresaOriginal.get(empNorm) || empNorm} | Total viajes: ${viajesEmp.length} | Con zona: ${conZona} | Sin zona: ${sinZona} | Ingresos: ${totalIngresos} | Ganancia calculada: ${totalGanancia}`);
+    return { emp: mapEmpresaOriginal.get(empNorm) || empNorm, totalServicios, totalIngresos, totalGanancia, conZona, sinZona };
   });
 
   // Obtener producciones guardadas en BD para la decena seleccionada
@@ -364,20 +428,14 @@ const CalculoProduccion: React.FC = () => {
       
       {/* Resumen de ganancias limpio */}
       <div className="mb-6 p-4 bg-gray-50 rounded-lg flex flex-col md:flex-row md:justify-between md:items-center">
-        <div className="mb-2 md:mb-0">
-          <span className="text-sm text-gray-600">Ganancia calculada desde viajes: </span>
-          <span className="text-lg font-bold text-blue-700">
-            ${resumenCalculado.reduce((acc, r) => acc + r.totalGanancia, 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
-          </span>
-        </div>
         <div>
-          <span className="text-sm text-gray-600">Ganancia guardada en BD: </span>
-          <span className="text-lg font-bold text-green-700">
-            ${gananciaTotalBD.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+          <span className="text-sm text-gray-600">Ganancia oficial (guardada en BD): </span>
+          <span className="text-lg font-bold text-green-700" title="Este es el valor oficial que se paga">
+            ${resumenCombinado.reduce((acc, r) => acc + r.gananciaBD, 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
           </span>
         </div>
       </div>
-      
+      <div className="text-xs text-gray-500 mb-2">* La ganancia mostrada es la oficial para pago. Si hay diferencias, revisa los datos de viajes, zonas y vuelve a generar producciones.</div>
       <table className="min-w-full border divide-y divide-gray-200 text-sm mb-8">
         <thead className="bg-gray-100">
           <tr>
@@ -394,7 +452,7 @@ const CalculoProduccion: React.FC = () => {
               <td className="px-4 py-2 font-medium">{r.emp}</td>
               <td className="px-4 py-2">{r.totalServicios}</td>
               <td className="px-4 py-2">${r.totalIngresos.toLocaleString()}</td>
-              <td className="px-4 py-2">${r.totalGanancia.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+              <td className="px-4 py-2 text-green-700 font-bold" title="Valor oficial para pago">${r.gananciaBD.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
               <td className="px-4 py-2">
                 <button
                   className="bg-blue-600 text-white px-2 py-1 rounded"

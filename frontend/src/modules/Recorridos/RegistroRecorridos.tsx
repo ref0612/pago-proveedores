@@ -55,8 +55,6 @@ const RegistroRecorridos: React.FC = () => {
 
   // Estado para edición de zona
   const [editZone, setEditZone] = useState<any | null>(null);
-  // Estado para edición de tramo
-  const [editTramo, setEditTramo] = useState<{ tramo: any, zoneId: number } | null>(null);
 
   // Estado para modal de resumen de importación masiva
   const [bulkSummary, setBulkSummary] = useState<any | null>(null);
@@ -66,16 +64,15 @@ const RegistroRecorridos: React.FC = () => {
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
 
   // Estado para ciudades no configuradas
-  const [unconfiguredCities, setUnconfiguredCities] = useState<string[]>([]);
-  const [unconfiguredTramos, setUnconfiguredTramos] = useState<Array<{origen: string, destino: string}>>([]);
+  const [unconfiguredTramos, setUnconfiguredTramos] = useState<{ tramosNoConfigurados: Array<{origen: string, destino: string}>, rutasSinZona: Array<{origen: string, destino: string}> }>({ tramosNoConfigurados: [], rutasSinZona: [] });
   const [showCitiesModal, setShowCitiesModal] = useState(false);
   const [loadingCities, setLoadingCities] = useState(false);
 
   // Cargar zonas al montar
   useEffect(() => {
-    fetch('/api/zones')
+    fetch('/api/zones?page=0&size=1000')
       .then(res => res.json())
-      .then(data => setZones(data))
+      .then(data => setZones(data.content || data))
       .catch(err => console.error('Error cargando zonas:', err));
   }, []);
 
@@ -190,12 +187,13 @@ const RegistroRecorridos: React.FC = () => {
   };
 
   // Abrir modal para editar zona
-  const handleEditZone = (zone: any) => {
+  const handleEditZone = async (zone: any) => {
     setEditZone(zone);
     setNombreZona(zone.nombre);
     setPorcentajeZona(zone.porcentaje);
-    // Mostrar los tramos asociados en el modal (solo visualización)
-    const tramosZona = routesByZone[zone.id] || [];
+    // Cargar tramos asociados a la zona desde el backend
+    const res = await fetch(`/api/routes/by-zone/${zone.id}`);
+    const tramosZona = await res.json();
     setTramos(tramosZona.map((t: any) => ({
       origen: ciudadesChile.find(c => c.value === t.origen) || { value: t.origen, label: t.origen },
       destino: ciudadesChile.find(c => c.value === t.destino) || { value: t.destino, label: t.destino },
@@ -231,9 +229,9 @@ const RegistroRecorridos: React.FC = () => {
       // 2. Obtener tramos actuales en backend (solo si es edición)
       let tramosBackend: any[] = [];
       if (editZone) {
-        const routesRes = await fetch('/api/routes');
+        const routesRes = await fetch('/api/routes?page=0&size=1000');
         const allRoutes = await routesRes.json();
-        tramosBackend = allRoutes.filter((r: any) => r.zona && r.zona.id === editZone.id);
+        tramosBackend = (allRoutes.content || allRoutes).filter((r: any) => r.zona && r.zona.id === editZone.id);
       }
       // 3. Determinar tramos a crear y a eliminar
       const tramosValidos = tramos.filter(t => t.origen && t.destino && t.kilometraje > 0);
@@ -282,12 +280,12 @@ const RegistroRecorridos: React.FC = () => {
   };
 
   // Mostrar tramos asociados a cada zona
-  const [routesByZone, setRoutesByZone] = useState<{ [zoneId: number]: any[] }>({});
   useEffect(() => {
     // Cargar tramos para cada zona
     const fetchRoutes = async () => {
-      const routesRes = await fetch('/api/routes');
-      const allRoutes = await routesRes.json();
+      const routesRes = await fetch('/api/routes?page=0&size=1000');
+      const routesData = await routesRes.json();
+      const allRoutes = routesData.content || routesData;
       const grouped: { [zoneId: number]: any[] } = {};
       allRoutes.forEach((route: any) => {
         if (route.zona && route.zona.id) {
@@ -295,7 +293,7 @@ const RegistroRecorridos: React.FC = () => {
           grouped[route.zona.id].push(route);
         }
       });
-      setRoutesByZone(grouped);
+      // setRoutesByZone(grouped); // Eliminado
     };
     fetchRoutes();
   }, [zones]);
@@ -304,14 +302,15 @@ const RegistroRecorridos: React.FC = () => {
   const handleDeleteZone = async (id?: number) => {
     if (!id) return;
     if (!window.confirm('¿Seguro que deseas eliminar esta zona y todos sus tramos asociados?')) return;
-    // Eliminar tramos asociados primero
-    const tramos = routesByZone[id] || [];
-    await Promise.all(tramos.map(tramo => fetch(`/api/routes/${tramo.id}`, { method: 'DELETE' })));
+    // Obtener tramos asociados a la zona desde el backend
+    const resTramos = await fetch(`/api/routes/by-zone/${id}`);
+    const tramos = await resTramos.json();
+    await Promise.all(tramos.map((tramo: any) => fetch(`/api/routes/${tramo.id}`, { method: 'DELETE' })));
     // Eliminar zona
     const res = await fetch(`/api/zones/${id}`, { method: 'DELETE' });
     if (res.ok) {
-      const zonasActualizadas = await fetch('/api/zones').then(res => res.json());
-      setZones(zonasActualizadas);
+      const zonasActualizadas = await fetch('/api/zones?page=0&size=1000').then(res => res.json());
+      setZones(zonasActualizadas.content || zonasActualizadas);
       setSuccessMsg('Zona eliminada correctamente');
       setTimeout(() => setSuccessMsg(''), 2500);
     }
@@ -322,17 +321,6 @@ const RegistroRecorridos: React.FC = () => {
     if (!window.confirm('¿Seguro que deseas eliminar este tramo?')) return;
     const res = await fetch(`/api/routes/${tramoId}`, { method: 'DELETE' });
     if (res.ok) {
-      // Actualizar tramos de la zona
-      const routesRes = await fetch('/api/routes');
-      const allRoutes = await routesRes.json();
-      const grouped: { [zoneId: number]: any[] } = {};
-      allRoutes.forEach((route: any) => {
-        if (route.zona && route.zona.id) {
-          if (!grouped[route.zona.id]) grouped[route.zona.id] = [];
-          grouped[route.zona.id].push(route);
-        }
-      });
-      setRoutesByZone(grouped);
       setSuccessMsg('Tramo eliminado correctamente');
       setTimeout(() => setSuccessMsg(''), 2500);
     }
@@ -395,8 +383,10 @@ const RegistroRecorridos: React.FC = () => {
         zonasMap[nombre].tramos.push({ origen, destino, km });
       }
       // Validar duplicados y existencia en backend
-      const zonasExistentes = await fetch('/api/zones').then(res => res.json());
-      const routesExistentes = await fetch('/api/routes').then(res => res.json());
+      const zonasRaw = await fetch('/api/zones?page=0&size=1000').then(res => res.json());
+      const zonasExistentes = zonasRaw.content || zonasRaw;
+      const routesRaw = await fetch('/api/routes?page=0&size=1000').then(res => res.json());
+      const routesExistentes = routesRaw.content || routesRaw;
       const resumen: any[] = [];
       Object.entries(zonasMap).forEach(([nombre, data]) => {
         const zonaExistente = zonasExistentes.find((z: any) => z.nombre === nombre);
@@ -437,7 +427,7 @@ const RegistroRecorridos: React.FC = () => {
   // Actualizar routesExistentes al cargar el modal de carga masiva
   const [routesExistentes, setRoutesExistentes] = useState<any[]>([]);
   useEffect(() => {
-    fetch('/api/routes').then(res => res.json()).then(setRoutesExistentes);
+    fetch('/api/routes?page=0&size=1000').then(res => res.json()).then(data => setRoutesExistentes(data.content || data));
   }, [bulkModalOpen]);
 
   // Confirmar importación masiva
@@ -486,9 +476,9 @@ const RegistroRecorridos: React.FC = () => {
       }
     }
     // Refrescar zonas y tramos
-    const zonasActualizadas = await fetch('/api/zones').then(res => res.json());
-    setZones(zonasActualizadas);
-    fetch('/api/routes').then(res => res.json()).then(setRoutesExistentes);
+    const zonasActualizadas = await fetch('/api/zones?page=0&size=1000').then(res => res.json());
+    setZones(zonasActualizadas.content || zonasActualizadas);
+    fetch('/api/routes?page=0&size=1000').then(res => res.json()).then(data => setRoutesExistentes(data.content || data));
     setSuccessMsg('Carga masiva completada');
     setTimeout(() => setSuccessMsg(''), 2500);
   };
@@ -500,7 +490,10 @@ const RegistroRecorridos: React.FC = () => {
       const response = await fetch('http://localhost:8080/api/zones/unconfigured-tramos');
       if (response.ok) {
         const tramos = await response.json();
-        setUnconfiguredTramos(tramos);
+        setUnconfiguredTramos({
+          tramosNoConfigurados: tramos.tramosNoConfigurados || [],
+          rutasSinZona: tramos.rutasSinZona || []
+        });
         setShowCitiesModal(true);
       } else {
         console.error('Error obteniendo tramos no configurados');
@@ -707,7 +700,7 @@ const RegistroRecorridos: React.FC = () => {
         overlayClassName="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center"
       >
         <h2 className="text-xl font-bold mb-4">Verificación de tramos en zonas</h2>
-        {unconfiguredTramos.length === 0 ? (
+        {unconfiguredTramos.tramosNoConfigurados.length === 0 && unconfiguredTramos.rutasSinZona.length === 0 ? (
           <div className="text-center">
             <div className="text-green-600 text-6xl mb-4">✓</div>
             <p className="text-green-600 font-medium text-lg mb-2">
@@ -719,40 +712,66 @@ const RegistroRecorridos: React.FC = () => {
           </div>
         ) : (
           <div>
-            <div className="flex items-center mb-4">
-              <div className="text-orange-600 text-2xl mr-2">⚠️</div>
-              <p className="text-orange-600 font-medium">
-                Se encontraron {unconfiguredTramos.length} tramo{unconfiguredTramos.length > 1 ? 's' : ''} sin configurar
-              </p>
-            </div>
-            <p className="mb-4 text-gray-700">
-              Los siguientes tramos están presentes en los viajes pero no están asignados a ninguna zona. 
-              Por favor, asígnalos a una zona para poder usarlos correctamente:
-            </p>
-            <div className="max-h-60 overflow-y-auto border rounded">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 sticky top-0">
-                  <tr>
-                    <th className="px-4 py-3 text-left font-medium">Origen</th>
-                    <th className="px-4 py-3 text-left font-medium">Destino</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {unconfiguredTramos.map((tramo, index) => {
-                    const origenBonito = ciudadesChile.find(c => normalizeCityName(c.value) === normalizeCityName(tramo.origen))?.label || tramo.origen;
-                    const destinoBonito = ciudadesChile.find(c => normalizeCityName(c.value) === normalizeCityName(tramo.destino))?.label || tramo.destino;
-                    return (
-                      <tr key={index} className="border-b hover:bg-gray-50">
-                        <td className="px-4 py-3 font-medium">{origenBonito}</td>
-                        <td className="px-4 py-3 font-medium">{destinoBonito}</td>
+            <div className="mb-6">
+              <div className="font-semibold text-orange-700 mb-2">Tramos presentes en viajes pero sin ruta configurada:</div>
+              {unconfiguredTramos.tramosNoConfigurados.length === 0 ? (
+                <div className="text-green-600">Ninguno</div>
+              ) : (
+                <div className="max-h-40 overflow-y-auto border rounded mb-2">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 sticky top-0">
+                      <tr>
+                        <th className="px-4 py-3 text-left font-medium">Origen</th>
+                        <th className="px-4 py-3 text-left font-medium">Destino</th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                    </thead>
+                    <tbody>
+                      {unconfiguredTramos.tramosNoConfigurados.map((tramo, index) => {
+                        const origenBonito = ciudadesChile.find(c => normalizeCityName(c.value) === normalizeCityName(tramo.origen))?.label || tramo.origen;
+                        const destinoBonito = ciudadesChile.find(c => normalizeCityName(c.value) === normalizeCityName(tramo.destino))?.label || tramo.destino;
+                        return (
+                          <tr key={index} className="border-b hover:bg-gray-50">
+                            <td className="px-4 py-3 font-medium">{origenBonito}</td>
+                            <td className="px-4 py-3 font-medium">{destinoBonito}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+            <div className="mb-6">
+              <div className="font-semibold text-yellow-700 mb-2">Rutas existentes sin zona asignada:</div>
+              {unconfiguredTramos.rutasSinZona.length === 0 ? (
+                <div className="text-green-600">Ninguna</div>
+              ) : (
+                <div className="max-h-40 overflow-y-auto border rounded mb-2">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 sticky top-0">
+                      <tr>
+                        <th className="px-4 py-3 text-left font-medium">Origen</th>
+                        <th className="px-4 py-3 text-left font-medium">Destino</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {unconfiguredTramos.rutasSinZona.map((tramo, index) => {
+                        const origenBonito = ciudadesChile.find(c => normalizeCityName(c.value) === normalizeCityName(tramo.origen))?.label || tramo.origen;
+                        const destinoBonito = ciudadesChile.find(c => normalizeCityName(c.value) === normalizeCityName(tramo.destino))?.label || tramo.destino;
+                        return (
+                          <tr key={index} className="border-b hover:bg-gray-50">
+                            <td className="px-4 py-3 font-medium">{origenBonito}</td>
+                            <td className="px-4 py-3 font-medium">{destinoBonito}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
             <p className="mt-4 text-sm text-gray-600">
-              💡 <strong>Consejo:</strong> Puedes crear una nueva zona o agregar estos tramos a una zona existente.
+              💡 <strong>Consejo:</strong> Puedes crear una nueva zona o agregar estos tramos a una zona existente, y asignar zona a las rutas incompletas.
             </p>
           </div>
         )}
@@ -782,39 +801,15 @@ const RegistroRecorridos: React.FC = () => {
         </thead>
         <tbody>
           {zones.map(zone => (
-            <tr key={zone.id} className="border-b align-top">
+            <tr key={zone.id}>
               <td className="px-4 py-2 font-medium">{zone.nombre}</td>
               <td className="px-4 py-2">{zone.porcentaje}</td>
-              <td className="px-4 py-2">
-                {routesByZone[zone.id]?.length ? (
-                  <table className="border w-full text-xs">
-                    <thead>
-                      <tr>
-                        <th className="px-2 py-1">Origen</th>
-                        <th className="px-2 py-1">Destino</th>
-                        <th className="px-2 py-1">Km</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {routesByZone[zone.id].map((r, i) => (
-                        <tr key={i}>
-                          <td className="px-2 py-1">{r.origen}</td>
-                          <td className="px-2 py-1">{r.destino}</td>
-                          <td className="px-2 py-1">{r.kilometraje}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <span className="text-gray-400">Sin tramos</span>
-                )}
-              </td>
               <td className="px-4 py-2">
                 <button
                   className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
                   onClick={() => handleEditZone(zone)}
                 >
-                  Editar
+                  Ver/Editar tramos
                 </button>
                 <button
                   className="bg-red-500 text-white px-2 py-1 rounded"

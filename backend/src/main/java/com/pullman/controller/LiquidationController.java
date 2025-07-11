@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -57,6 +60,11 @@ public class LiquidationController {
         return liquidationService.findAll().stream()
             .map(LiquidationDto::new)
             .collect(Collectors.toList());
+    }
+
+    @GetMapping("/paged")
+    public Page<LiquidationDto> getAllPaged(@PageableDefault(size = 20) Pageable pageable) {
+        return liquidationService.findAll(pageable).map(LiquidationDto::new);
     }
 
     @GetMapping("/{id}")
