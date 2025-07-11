@@ -14,6 +14,21 @@ backend/buildNumber.properties
 backend/.mvn/timing.properties
 backend/.mvn/wrapper/maven-wrapper.jar
 
+# Patrones globales para Maven
+**/target/
+**/pom.xml.tag
+**/pom.xml.releaseBackup
+**/pom.xml.versionsBackup
+**/pom.xml.next
+**/release.properties
+**/dependency-reduced-pom.xml
+**/buildNumber.properties
+**/.mvn/timing.properties
+**/.mvn/wrapper/maven-wrapper.jar
+**/.mvn/wrapper/maven-wrapper.properties
+**/mvnw
+**/mvnw.cmd
+
 # Node.js - Archivos generados y dependencias
 frontend/node_modules/
 frontend/.pnp
@@ -28,6 +43,41 @@ frontend/.env.production.local
 frontend/npm-debug.log*
 frontend/yarn-debug.log*
 frontend/yarn-error.log*
+
+# Cache y archivos temporales de Node.js
+**/.cache/
+**/cache/
+**/.next/
+**/.nuxt/
+**/.output/
+**/.vuepress/dist/
+**/.serverless/
+**/.fusebox/
+**/.dynamodb/
+**/.tern-port
+**/.yarn-integrity
+**/.yarn/cache
+**/.yarn/unplugged
+**/.yarn/build-state.yml
+**/.yarn/install-state.gz
+**/.pnp.*
+
+# Archivos de dependencias específicos
+**/package-lock.json
+**/yarn.lock
+**/pnpm-lock.yaml
+**/lerna-debug.log*
+**/.npm
+**/.eslintcache
+**/.stylelintcache
+**/.parcel-cache
+**/.cache
+**/.mfsu
+**/.umi
+**/.umi-production
+**/.mfsu.json
+**/.mfsu.tsbuildinfo
+**/.mfsu.jsbuildinfo
 
 # Archivos del sistema
 .DS_Store
@@ -47,3 +97,30 @@ logs/
 # Archivos temporales
 *.tmp
 *.temp
+
+# Archivos de cache adicionales
+**/.cache/
+**/cache/
+**/.temp/
+**/temp/
+**/.tmp/
+**/tmp/
+
+# Archivos de IDE adicionales
+**/.idea/
+**/.vscode/
+**/.vs/
+**/*.sublime-project
+**/*.sublime-workspace
+
+# Archivos de sistema adicionales
+**/.DS_Store
+**/Thumbs.db
+**/ehthumbs.db
+**/Desktop.ini
+
+# Archivos de backup
+**/*.bak
+**/*.backup
+**/*.old
+**/*.orig
