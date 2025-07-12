@@ -33,12 +33,6 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Trigger mínimo en el extremo izquierdo */}
-      <div 
-        className="fixed top-0 left-0 w-2 h-full z-30 lg:block hidden"
-        onMouseEnter={() => setIsHovered(true)}
-      />
-      
       {/* Sidebar */}
       <Sidebar 
         isOpen={sidebarOpen} 
@@ -49,7 +43,11 @@ export default function Layout({ children }: LayoutProps) {
       />
       
       {/* Contenido principal */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${isHovered ? 'lg:ml-0' : 'lg:ml-0'}`}>
+      <div 
+        className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${
+          (isHovered || sidebarOpen) ? 'lg:ml-64' : 'lg:ml-0'
+        }`}
+      >
         {/* Header móvil */}
         <Header onToggleSidebar={toggleSidebar} />
         
@@ -58,6 +56,23 @@ export default function Layout({ children }: LayoutProps) {
           {children}
         </main>
       </div>
+      
+      {/* 1px trigger para mostrar el sidebar */}
+      <div 
+        className="fixed top-0 left-0 w-1 h-full z-40 lg:block hidden hover:cursor-e-resize"
+        onMouseEnter={() => {
+          setIsHovered(true);
+          setSidebarOpen(true);
+        }}
+      />
+      
+      {/* Overlay para móvil */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={closeSidebar}
+        />
+      )}
     </div>
   );
 } 

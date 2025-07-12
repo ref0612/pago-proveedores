@@ -187,7 +187,7 @@ const CsvImport: React.FC<CsvImportProps> = ({ onImportSuccess, onImportError, o
             ></div>
           </div>
           <p className="text-sm text-gray-600 mt-1">
-            Importando archivo grande... {uploadProgress}%
+            Importando archivo... {uploadProgress}%
             <br />
             <span className="text-xs text-gray-500">
               Esto puede tomar varios minutos para archivos grandes
