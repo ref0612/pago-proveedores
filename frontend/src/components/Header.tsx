@@ -30,7 +30,6 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
           >
             <Menu className="w-6 h-6" />
           </button>
-          <h1 className="text-lg font-semibold text-gray-800">Pullman</h1>
         </div>
         
         <div className="flex items-center space-x-4">
