@@ -45,6 +45,19 @@ public class UserService {
         return null;
     }
     
+    public boolean changePassword(Long userId, String oldPassword, String newPassword) {
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            if (user.getPassword().equals(oldPassword)) {
+                user.setPassword(newPassword);
+                userRepository.save(user);
+                return true;
+            }
+        }
+        return false;
+    }
+    
     public void initializeDefaultUsers() {
         // Solo crear usuarios si no existen
         if (userRepository.count() == 0) {

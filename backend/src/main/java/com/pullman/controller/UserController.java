@@ -74,6 +74,21 @@ public class UserController {
                 .orElse(ResponseEntity.notFound().build());
     }
     
+    @PutMapping("/{id}/password")
+    public ResponseEntity<?> changePassword(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+        String oldPassword = payload.get("oldPassword");
+        String newPassword = payload.get("newPassword");
+        if (oldPassword == null || newPassword == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Faltan datos"));
+        }
+        boolean changed = userService.changePassword(id, oldPassword, newPassword);
+        if (changed) {
+            return ResponseEntity.ok(Map.of("message", "Contraseña actualizada correctamente"));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("error", "La contraseña actual es incorrecta"));
+        }
+    }
+    
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         if (userService.findById(id).isPresent()) {
