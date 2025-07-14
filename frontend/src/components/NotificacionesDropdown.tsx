@@ -157,7 +157,7 @@ export default function NotificacionesDropdown({ onClose, onNoLeidasChange, onCa
     : notificaciones;
 
   return (
-    <div className="bg-white shadow-2xl rounded-xl p-0 max-h-104 overflow-y-auto border border-gray-200 min-w-[420px] animate-fadein">
+    <div className="bg-white shadow-2xl rounded-xl p-0 max-h-104 overflow-y-auto border border-gray-200 min-w-[420px] animate-fadein ml-[-90px]">
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
         <div className="flex items-center gap-2">
           <span className="font-bold text-lg text-gray-800">Notificaciones</span>

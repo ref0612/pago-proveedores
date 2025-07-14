@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import {
   Home,
@@ -24,6 +24,7 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMouseLeave }: SidebarProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const routerLocation = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -39,6 +40,19 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
   if (!user) {
     return null;
   }
+
+  // Definición de rutas y módulos
+  const modules: { path: string; label: string; icon: React.ElementType; show: boolean; extra?: boolean }[] = [
+    { path: '/dashboard', label: 'Dashboard', icon: Home, show: true },
+    { path: '/trips', label: 'Viajes', icon: Route, show: user.canViewTrips },
+    { path: '/produccion', label: 'Producción', icon: Calculator, show: user.canViewProduccion },
+    { path: '/validacion', label: 'Validación', icon: CheckCircle, show: user.canViewValidacion },
+    { path: '/liquidacion', label: 'Liquidación', icon: CreditCard, show: user.canViewLiquidacion },
+    { path: '/reportes', label: 'Reportes', icon: BarChart3, show: user.canViewReportes },
+    { path: '/recorridos', label: 'Zonas', icon: Building2, show: true, extra: true },
+    { path: '/usuarios', label: 'Usuarios', icon: Users, show: true, extra: true },
+    { path: '/privileges', label: 'Privilegios', icon: Settings, show: true, extra: true },
+  ];
 
   return (
     <div
@@ -71,97 +85,41 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
         {/* Navegación */}
         <nav className="flex-1 p-4 overflow-y-auto">
           <div className="space-y-1">
-            <button
-              onClick={() => handleNavigation('/dashboard')}
-              className="w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 flex items-center group"
-            >
-              <Home className="w-5 h-5 mr-3 text-gray-400 group-hover:text-blue-600 transition-colors" />
-              Dashboard
-            </button>
-
-            {user.canViewTrips && (
-              <button
-                onClick={() => handleNavigation('/trips')}
-                className="w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 flex items-center group"
-              >
-                <Route className="w-5 h-5 mr-3 text-gray-400 group-hover:text-blue-600 transition-colors" />
-                Viajes
-              </button>
-            )}
-
-            {user.canViewProduccion && (
-              <button
-                onClick={() => handleNavigation('/produccion')}
-                className="w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 flex items-center group"
-              >
-                <Calculator className="w-5 h-5 mr-3 text-gray-400 group-hover:text-blue-600 transition-colors" />
-                Producción
-              </button>
-            )}
-
-            {user.canViewValidacion && (
-              <button
-                onClick={() => handleNavigation('/validacion')}
-                className="w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 flex items-center group"
-              >
-                <CheckCircle className="w-5 h-5 mr-3 text-gray-400 group-hover:text-blue-600 transition-colors" />
-                Validación
-              </button>
-            )}
-
-            {user.canViewLiquidacion && (
-              <button
-                onClick={() => handleNavigation('/liquidacion')}
-                className="w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 flex items-center group"
-              >
-                <CreditCard className="w-5 h-5 mr-3 text-gray-400 group-hover:text-blue-600 transition-colors" />
-                Liquidación
-              </button>
-            )}
-
-            {user.canViewReportes && (
-              <button
-                onClick={() => handleNavigation('/reportes')}
-                className="w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 flex items-center group"
-              >
-                <BarChart3 className="w-5 h-5 mr-3 text-gray-400 group-hover:text-blue-600 transition-colors" />
-                Reportes
-              </button>
-            )}
+            {modules.filter((m) => m.show && !m.extra).map(({ path, label, icon: Icon }) => {
+              const active = routerLocation.pathname.startsWith(path);
+              return (
+                <button
+                  key={path}
+                  onClick={() => handleNavigation(path)}
+                  className={`w-full text-left px-4 py-2 rounded-lg flex items-center group transition-all duration-200 font-medium
+                    ${active ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}
+                  `}
+                >
+                  <Icon className={`w-5 h-5 mr-3 ${active ? 'text-blue-600' : 'text-gray-400 group-hover:text-blue-500'} transition-colors`} />
+                  <span className="flex-1 text-left">{label}</span>
+                  {active && <span className="ml-2 w-2 h-2 rounded-full bg-blue-600"></span>}
+                </button>
+              );
+            })}
           </div>
 
-          <button
-            onClick={() => { }}
-            className="w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 flex items-center group"
-          >
-            <Settings className="w-5 h-5 mr-3 text-gray-400 group-hover:text-blue-600 transition-colors" />
-            Configuraciones
-          </button>
-
-          <div className="mt-1 ml-8 space-y-1">
-            <button
-              onClick={() => handleNavigation('/recorridos')}
-              className="w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 flex items-center text-sm text-gray-600"
-            >
-              <Building2 className="w-4 h-4 mr-3 text-gray-400" />
-              Zonas
-            </button>
-
-            <button
-              onClick={() => handleNavigation('/usuarios')}
-              className="w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 flex items-center text-sm text-gray-600"
-            >
-              <Users className="w-4 h-4 mr-3 text-gray-400" />
-              Usuarios
-            </button>
-
-            <button
-              onClick={() => handleNavigation('/privileges')}
-              className="w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 flex items-center text-sm text-gray-600"
-            >
-              <Settings className="w-4 h-4 mr-3 text-gray-400" />
-              Privilegios
-            </button>
+          <div className="mt-6 border-t border-gray-100 pt-4">
+            {modules.filter((m) => m.show && m.extra).map(({ path, label, icon: Icon }) => {
+              const active = routerLocation.pathname.startsWith(path);
+              return (
+                <button
+                  key={path}
+                  onClick={() => handleNavigation(path)}
+                  className={`w-full text-left px-4 py-2 rounded-lg flex items-center group transition-all duration-200 text-sm
+                    ${active ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}
+                  `}
+                >
+                  <Icon className={`w-4 h-4 mr-3 ${active ? 'text-blue-500' : 'text-gray-400 group-hover:text-blue-500'} transition-colors`} />
+                  <span className="flex-1 text-left">{label}</span>
+                  {active && <span className="ml-2 w-2 h-2 rounded-full bg-blue-500"></span>}
+                </button>
+              );
+            })}
           </div>
         </nav>
 

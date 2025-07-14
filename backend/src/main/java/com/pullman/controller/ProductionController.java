@@ -249,9 +249,9 @@ public class ProductionController {
                 List<User> admins = userService.findByRol(User.Role.ADMIN);
                 for (User admin : admins) {
                     Notificacion notif = new Notificacion();
-                    notif.setMensaje("El usuario validador " + user.getNombre() + " ha verificado una producción y está lista para ser liquidada.");
+                    notif.setMensaje(user.getNombre() + " ha verificado una producción y está lista para ser liquidada.");
                     notif.setRolDestino("ADMIN");
-                    notif.setTipo("AUTORIZACION");
+                    notif.setTipo("AUTORIZACION");      
                     notif.setReferenciaId(savedProd.getId());
                     notificacionService.guardar(notif);
                 }

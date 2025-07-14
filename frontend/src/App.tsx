@@ -12,6 +12,7 @@ import { RegistroRecorridos } from './modules/Recorridos';
 import { CalculoProduccion } from './modules/Produccion';
 import { ValidacionOperacional } from './modules/Validacion';
 import { LiquidacionPagos } from './modules/Liquidacion';
+import Perfil from './pages/Perfil';
 
 function RequireAuth({ children, roles }: { children: ReactElement, roles?: string[] }) {
   const { user, loading } = useAuth();
@@ -96,6 +97,13 @@ function AppContent() {
           <RequireAuth roles={['ADMIN']}>
             <Layout>
               <Privileges />
+            </Layout>
+          </RequireAuth>
+        } />
+        <Route path="/perfil" element={
+          <RequireAuth>
+            <Layout>
+              <Perfil />
             </Layout>
           </RequireAuth>
         } />
