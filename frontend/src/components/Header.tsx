@@ -1,6 +1,9 @@
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Menu, LogOut, User } from 'lucide-react';
+import NotificacionesDropdown from './NotificacionesDropdown';
+import { useRef, useEffect, useState } from 'react';
+import { useNotificaciones } from '../hooks/useAuth';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -8,7 +11,26 @@ interface HeaderProps {
 
 export default function Header({ onToggleSidebar }: HeaderProps) {
   const { user, logout } = useAuth();
+  const { notificaciones } = useNotificaciones();
   const navigate = useNavigate();
+  const [showNotificaciones, setShowNotificaciones] = useState(false);
+  const notificacionesRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showNotificaciones) return;
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        notificacionesRef.current &&
+        !notificacionesRef.current.contains(event.target as Node)
+      ) {
+        setShowNotificaciones(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showNotificaciones]);
 
   const handleLogout = () => {
     logout();
@@ -18,6 +40,12 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
   if (!user) {
     return null;
   }
+
+  // Determinar si hay notificaciones no leídas desde el contexto global
+  const tieneNoLeidas = notificaciones.some(n => !n.leida);
+
+  // Agregar animación de respiración usando Tailwind
+  const breathingAnimation = `animate-breathing`;
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
@@ -33,10 +61,26 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
         </div>
         
         <div className="flex items-center space-x-4">
-          <button className="p-2 text-gray-600 hover:text-gray-900 relative">
-            <Bell className="h-5 w-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
+          <div className="relative" ref={notificacionesRef}>
+            <button
+              className="p-2 text-gray-600 hover:text-gray-900 relative"
+              onClick={() => setShowNotificaciones((v) => !v)}
+              aria-label="Notificaciones"
+            >
+              <Bell className="h-5 w-5" />
+              {/* Badge con animación de respiración si hay no leídas, verde si no hay */}
+              {tieneNoLeidas ? (
+                <span className={`absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-breathing`}></span>
+              ) : (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full"></span>
+              )}
+            </button>
+            {showNotificaciones && (
+              <div className="absolute right-0 mt-2 w-80 z-50">
+                <NotificacionesDropdown onClose={() => setShowNotificaciones(false)} />
+              </div>
+            )}
+          </div>
           <div className="flex items-center space-x-3">
             <div className="text-right">
               <p className="text-sm font-medium text-gray-900">{user.nombre}</p>

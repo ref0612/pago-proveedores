@@ -58,6 +58,19 @@ export const apiPost = async (endpoint: string, data?: any) => {
   return response.json();
 };
 
+// Función genérica para peticiones PUT
+export const apiPut = async (endpoint: string, data?: any) => {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: data ? JSON.stringify(data) : undefined,
+  });
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+};
+
 // Función específica para subir archivos CSV
 export const uploadCsvFile = async (file: File) => {
   const formData = new FormData();

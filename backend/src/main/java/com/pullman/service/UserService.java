@@ -113,4 +113,8 @@ public class UserService {
             userRepository.save(invitado);
         }
     }
+
+    public List<User> findByRol(User.Role rol) {
+        return userRepository.findByRol(rol);
+    }
 } 

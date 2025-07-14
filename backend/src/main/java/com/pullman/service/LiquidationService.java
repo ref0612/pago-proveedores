@@ -3,6 +3,10 @@ package com.pullman.service;
 import com.pullman.domain.Liquidation;
 import com.pullman.domain.Production;
 import com.pullman.repository.LiquidationRepository;
+import com.pullman.service.NotificacionService;
+import com.pullman.service.UserService;
+import com.pullman.domain.Notificacion;
+import com.pullman.domain.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +20,10 @@ import java.util.Optional;
 public class LiquidationService {
     @Autowired
     private LiquidationRepository liquidationRepository;
+    @Autowired
+    private NotificacionService notificacionService;
+    @Autowired
+    private UserService userService;
 
     public Page<Liquidation> findAll(Pageable pageable) {
         return liquidationRepository.findAll(pageable);
@@ -83,7 +91,18 @@ public class LiquidationService {
             liquidation.setEstado("PENDIENTE");
             liquidation.setFechaAprobacion(LocalDate.now());
             liquidation.setFecha(LocalDate.now());
-            return liquidationRepository.save(liquidation);
+            Liquidation saved = liquidationRepository.save(liquidation);
+            // Notificar a todos los administradores
+            List<User> admins = userService.findByRol(User.Role.ADMIN);
+            for (User admin : admins) {
+                Notificacion notif = new Notificacion();
+                notif.setMensaje("Hay una nueva liquidación disponible.");
+                notif.setRolDestino("ADMIN");
+                notif.setTipo("LIQUIDACION");
+                notif.setReferenciaId(saved.getId());
+                notificacionService.guardar(notif);
+            }
+            return saved;
         }
         
         // Si ya existe, actualizar la fecha de aprobación

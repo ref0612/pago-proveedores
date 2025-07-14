@@ -130,8 +130,6 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
             )}
           </div>
 
-
-
           <button
             onClick={() => { }}
             className="w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 flex items-center group"

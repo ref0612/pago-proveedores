@@ -28,6 +28,8 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import com.pullman.service.NotificacionService;
+import com.pullman.domain.Notificacion;
 
 @RestController
 @RequestMapping("/api/productions")
@@ -52,6 +54,9 @@ public class ProductionController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private NotificacionService notificacionService;
 
     @GetMapping
     public List<Production> getAll() {
@@ -162,16 +167,26 @@ public class ProductionController {
                     entrepreneur = entrepreneurRepository.save(entrepreneur);
                     entrepreneurMap.put(entrepreneurName, entrepreneur);
                 }
-                            // Verificar si existe la producción de manera optimizada
-            boolean productionExists = productionService.existsByEntrepreneurAndDecena(entrepreneur.getId(), decena);
-            if (!productionExists && totalGanancia > 0) {
+                // Verificar si existe la producción de manera optimizada
+                boolean productionExists = productionService.existsByEntrepreneurAndDecena(entrepreneur.getId(), decena);
+                if (!productionExists && totalGanancia > 0) {
                     Production production = new Production();
                     production.setDecena(decena);
                     production.setTotal(totalGanancia);
                     production.setValidado(false);
                     production.setComentarios("");
                     production.setEntrepreneur(entrepreneur);
-                    productionService.save(production);
+                    Production saved = productionService.save(production);
+                    // Notificar a todos los validadores si la producción está pendiente de validación
+                    List<User> validadores = userService.findByRol(User.Role.VALIDADOR);
+                    for (User validador : validadores) {
+                        Notificacion notif = new Notificacion();
+                        notif.setMensaje("Hay una nueva producción pendiente de validación.");
+                        notif.setRolDestino("VALIDADOR");
+                        notif.setTipo("VALIDACION");
+                        notif.setReferenciaId(saved.getId());
+                        notificacionService.guardar(notif);
+                    }
                     generatedCount++;
                 }
             }
@@ -230,6 +245,16 @@ public class ProductionController {
             // Crear liquidación si la producción fue aprobada
             if ("APROBADO".equals(nuevoEstatus)) {
                 liquidationService.createIfNotExistsForProduction(savedProd);
+                // Notificar a todos los administradores
+                List<User> admins = userService.findByRol(User.Role.ADMIN);
+                for (User admin : admins) {
+                    Notificacion notif = new Notificacion();
+                    notif.setMensaje("El usuario validador " + user.getNombre() + " ha verificado una producción y está lista para ser liquidada.");
+                    notif.setRolDestino("ADMIN");
+                    notif.setTipo("AUTORIZACION");
+                    notif.setReferenciaId(savedProd.getId());
+                    notificacionService.guardar(notif);
+                }
             }
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Estatus actualizado exitosamente");
@@ -251,7 +276,20 @@ public class ProductionController {
 
     @PostMapping
     public Production create(@RequestBody Production production) {
-        return productionService.save(production);
+        Production saved = productionService.save(production);
+        // Notificar a todos los validadores si la producción está pendiente de validación
+        if (!saved.isValidado()) {
+            List<User> validadores = userService.findByRol(User.Role.VALIDADOR);
+            for (User validador : validadores) {
+                Notificacion notif = new Notificacion();
+                notif.setMensaje("Hay una nueva producción pendiente de validación.");
+                notif.setRolDestino("VALIDADOR");
+                notif.setTipo("VALIDACION");
+                notif.setReferenciaId(saved.getId());
+                notificacionService.guardar(notif);
+            }
+        }
+        return saved;
     }
 
     private Zone findZoneForTrip(Trip trip, List<Route> routes) {
