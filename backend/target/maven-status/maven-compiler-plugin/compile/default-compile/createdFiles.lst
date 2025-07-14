@@ -17,6 +17,7 @@ com\pullman\repository\RolePrivilegeRepository.class
 com\pullman\domain\Privilege.class
 com\pullman\domain\Payment.class
 com\pullman\service\ZoneService.class
+com\pullman\service\NotificacionService.class
 com\pullman\controller\EntrepreneurController.class
 com\pullman\controller\LiquidationController.class
 com\pullman\domain\Entrepreneur.class
@@ -28,13 +29,16 @@ com\pullman\repository\PrivilegeRepository.class
 com\pullman\controller\LiquidationDto.class
 com\pullman\repository\TripRepository.class
 com\pullman\controller\TripController.class
+com\pullman\repository\NotificacionRepository.class
 com\pullman\repository\EntrepreneurRepository.class
 com\pullman\controller\PrivilegeController.class
 com\pullman\domain\User$Role.class
+com\pullman\domain\Notificacion.class
 com\pullman\repository\LiquidationRepository.class
 com\pullman\controller\ProductionController.class
 com\pullman\domain\User.class
 com\pullman\service\TripService.class
+com\pullman\controller\NotificacionController.class
 com\pullman\repository\AuditLogRepository.class
 com\pullman\domain\RolePrivilege.class
 com\pullman\domain\Zone.class

@@ -89,6 +89,24 @@ public class UserController {
         }
     }
     
+    @PutMapping("/{id}/nombre")
+    public ResponseEntity<?> updateUserName(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+        String nuevoNombre = payload.get("nombre");
+        if (nuevoNombre == null || nuevoNombre.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "El nombre no puede estar vacío"));
+        }
+        return userService.findById(id)
+                .map(user -> {
+                    user.setNombre(nuevoNombre.trim());
+                    User updatedUser = userService.save(user);
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("message", "Nombre actualizado correctamente");
+                    response.put("user", updatedUser);
+                    return ResponseEntity.ok(response);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+    
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         if (userService.findById(id).isPresent()) {

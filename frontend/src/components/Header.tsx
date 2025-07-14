@@ -59,6 +59,16 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
     return null;
   }
 
+  // Función para obtener iniciales del usuario
+  const getInitials = (nombre: string) => {
+    if (!nombre) return '';
+    const partes = nombre.trim().split(' ');
+    if (partes.length === 1) {
+      return partes[0][0].toUpperCase();
+    }
+    return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+  };
+
   // Determinar si hay notificaciones no leídas desde el contexto global
   const tieneNoLeidas = notificaciones.some(n => !n.leida);
 
@@ -67,11 +77,11 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-      <div className="flex items-center justify-between px-4 py-3">
+      <div className="flex items-center justify-between px-6 py-2 min-h-[56px]">
         <div className="flex items-center">
           <button
             onClick={onToggleSidebar}
-            className="p-2 rounded-md hover:bg-gray-100 mr-3 lg:hidden"
+            className="p-2 rounded-md hover:bg-gray-100 transition-colors duration-200 mr-3 lg:hidden focus:outline-none focus:ring-2 focus:ring-cyan-300"
             aria-label="Toggle menu"
           >
             <Menu className="w-6 h-6" />
@@ -81,20 +91,20 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
         <div className="flex items-center space-x-4">
           <div className="relative" ref={notificacionesRef}>
             <button
-              className="p-2 w-9 h-9 text-gray-600 hover:text-gray-900 relative rounded-full hover:bg-gray-200 transition-colors flex items-center justify-center"
+              className="p-2 w-10 h-10 text-gray-600 hover:text-cyan-700 relative rounded-full hover:bg-cyan-50 transition-all duration-200 flex items-center justify-center shadow-sm"
               onClick={() => setShowNotificaciones((v) => !v)}
               aria-label="Notificaciones"
             >
-              <Bell className="h-10 w-10" />
+              <Bell className="h-7 w-7" />
               {/* Badge con animación de respiración si hay no leídas, verde si no hay */}
               {tieneNoLeidas ? (
-                <span className={`absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-breathing`}></span>
+                <span className={`absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-breathing border-2 border-white`}></span>
               ) : (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full"></span>
+                <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"></span>
               )}
             </button>
             {showNotificaciones && (
-              <div className="absolute right-0 mt-2 w-80 z-50">
+              <div className="absolute right-0 mt-2 w-80 z-50 drop-shadow-xl animate-fadein">
                 <NotificacionesDropdown onClose={() => setShowNotificaciones(false)} />
               </div>
             )}
@@ -103,24 +113,34 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
             
             <div className="flex items-center space-x-2 relative" ref={userMenuRef}>
               <button
-                className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-300"
+                className="w-10 h-10 bg-cyan-600 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-cyan-300 shadow-sm hover:scale-105 transition-transform duration-200"
                 onClick={() => setShowUserMenu((v) => !v)}
                 aria-label="Abrir menú de usuario"
               >
-                <User className="w-5 h-5 text-blue-600" />
+                <span className="text-white font-bold text-lg select-none" style={{ background: 'transparent' }}>
+                  {getInitials(user.nombre)}
+                </span>
               </button>
               {showUserMenu && (
-                <div className="absolute right-[-10px] top-11 mt-0 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 animate-fadein py-2">
-                  {/* Elimino la opción de ajustes de cuenta */}
+                <div className="absolute right-[-10px] top-11 mt-0 w-72 bg-white border border-gray-200 rounded-xl shadow-2xl z-50 animate-fadein py-2">
+                  {/* Bloque de usuario */}
+                  <div className="flex flex-col items-center px-4 pt-4 pb-2">
+                    <div className="w-14 h-14 bg-cyan-600 rounded-full flex items-center justify-center mb-2 shadow">
+                      <span className="text-white font-bold text-xl select-none">{getInitials(user.nombre)}</span>
+                    </div>
+                    <div className="text-base font-semibold text-gray-800 text-center w-full truncate">{user.nombre}</div>
+                    <div className="text-sm text-gray-500 text-center w-full truncate">{user.email}</div>
+                  </div>
+                  <div className="border-t border-gray-100 my-2" />
                   <button
-                    className="w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-50 flex items-center gap-2 text-sm"
+                    className="w-full text-left px-4 py-2 text-gray-700 hover:bg-cyan-50 flex items-center gap-2 text-sm transition-colors duration-200"
                     onClick={() => { setShowUserMenu(false); navigate('/perfil'); }}
                   >
-                    <User className="w-4 h-4 text-blue-500" /> Perfil
+                    <User className="w-4 h-4 text-cyan-600" /> Perfil
                   </button>
                   <div className="border-t border-gray-100 my-1" />
                   <button
-                    className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 flex items-center gap-2 text-sm"
+                    className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 flex items-center gap-2 text-sm transition-colors duration-200"
                     onClick={() => { setShowUserMenu(false); handleLogout(); }}
                   >
                     <LogOut className="w-4 h-4" /> Cerrar sesión

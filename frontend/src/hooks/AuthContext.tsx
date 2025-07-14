@@ -21,6 +21,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   initializeUsers: () => Promise<boolean>;
+  updateUser: (updatedUser: User) => void;
   isAdmin: () => boolean;
   isValidador: () => boolean;
   canEditValidated: () => boolean;
@@ -88,8 +89,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateUser = (updatedUser: User) => {
+    setUser(updatedUser);
+    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, initializeUsers, isAdmin, isValidador, canEditValidated }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, initializeUsers, updateUser, isAdmin, isValidador, canEditValidated }}>
       {children}
     </AuthContext.Provider>
   );
