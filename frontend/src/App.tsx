@@ -63,7 +63,7 @@ function AppContent() {
     const timer = setTimeout(() => {
       setExitingIdx(0);
       setTimeout(() => {
-        setAlerts(alerts => alerts.slice());
+        setAlerts(alerts => alerts.slice(1));
         setExitingIdx(null);
       }, 250); // Duración de la animación
     }, 4000);

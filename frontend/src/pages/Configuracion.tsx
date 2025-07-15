@@ -68,15 +68,10 @@ const Configuracion = () => {
       });
       if (response.ok) {
         const userFromServer = await response.json();
-        console.log('Respuesta del backend al actualizar usuario:', userFromServer);
-        // Soportar ambos formatos de respuesta: { user: ... } o el usuario directamente
         const updated = userFromServer.user ? userFromServer.user : userFromServer;
         setUsuarios(prev => prev.map(u => u.id == updated.id ? updated : u));
         setEditingUser(null);
-        if (lastEditedId !== updatedUser.id) {
-          setAlerts([{ message: 'Usuario actualizado correctamente.', type: 'success' }]);
-          setLastEditedId(updatedUser.id);
-        }
+        setAlerts([{ message: 'Usuario actualizado correctamente.', type: 'success' }]);
       } else {
         setError('Error al actualizar usuario');
       }

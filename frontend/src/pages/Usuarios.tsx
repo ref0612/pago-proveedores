@@ -74,12 +74,10 @@ export default function Usuarios() {
       });
       if (response.ok) {
         const userFromServer = await response.json();
-        setUsuarios(prev => prev.map(u => u.id === userFromServer.id ? userFromServer : u));
+        const updated = userFromServer.user ? userFromServer.user : userFromServer;
+        setUsuarios(prev => prev.map(u => u.id == updated.id ? updated : u));
         setEditingUser(null);
-        if (lastEditedId.current !== updatedUser.id) {
-          setAlerts([{ message: 'Usuario actualizado correctamente.', type: 'success' }]);
-          lastEditedId.current = updatedUser.id;
-        }
+        setAlerts([{ message: 'Usuario actualizado correctamente.', type: 'success' }]);
       } else {
         setEditError('Error al actualizar usuario');
       }
