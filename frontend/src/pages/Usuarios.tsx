@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { AlertContext } from '../App';
+import UserEditModal from '../components/UserEditModal';
 
 interface User {
   id: number;
@@ -16,13 +18,23 @@ interface User {
   canViewUsuarios: boolean;
 }
 
+const roles = [
+  { value: 'ADMIN', label: 'Administrador' },
+  { value: 'VALIDADOR', label: 'Validador' },
+  { value: 'MIEMBRO', label: 'Miembro' },
+  { value: 'INVITADO', label: 'Invitado' },
+];
+
 export default function Usuarios() {
   const { user } = useAuth();
+  const { setAlerts } = useContext(AlertContext);
   const [usuarios, setUsuarios] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [editError, setEditError] = useState('');
+  const lastEditedId = useRef<number | null>(null);
 
   useEffect(() => {
     console.log('useEffect Usuarios');
@@ -50,7 +62,7 @@ export default function Usuarios() {
   };
 
   const handleUpdateUser = async (updatedUser: User) => {
-    setError('');
+    setEditError('');
     setUpdatingId(updatedUser.id);
     try {
       const response = await fetch(`http://localhost:8080/api/users/${updatedUser.id}`, {
@@ -60,16 +72,19 @@ export default function Usuarios() {
         },
         body: JSON.stringify(updatedUser),
       });
-
       if (response.ok) {
         const userFromServer = await response.json();
         setUsuarios(prev => prev.map(u => u.id === userFromServer.id ? userFromServer : u));
         setEditingUser(null);
+        if (lastEditedId.current !== updatedUser.id) {
+          setAlerts(alerts => [...alerts, { message: 'Usuario actualizado correctamente.', type: 'success' }]);
+          lastEditedId.current = updatedUser.id;
+        }
       } else {
-        setError('Error al actualizar usuario');
+        setEditError('Error al actualizar usuario');
       }
     } catch (error) {
-      setError('Error de conexión');
+      setEditError('Error de conexión');
     } finally {
       setUpdatingId(null);
     }
@@ -166,9 +181,7 @@ export default function Usuarios() {
                   </span>
                 </td>
                 <td className="px-4 py-2 border text-center">
-                  <span className={`px-2 py-1 rounded text-xs ${usuario.activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                    {usuario.activo ? 'Activo' : 'Inactivo'}
-                  </span>
+                  <span className={`px-2 py-1 rounded text-xs ${usuario.activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{usuario.activo ? 'Activo' : 'Inactivo'}</span>
                 </td>
                 <td className="px-4 py-2 border text-center">
                   <button
@@ -183,86 +196,17 @@ export default function Usuarios() {
           </tbody>
         </table>
       </div>
-
-      {/* Modal de edición */}
+      {/* Modal de edición reutilizable */}
       {editingUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">Editar Usuario</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Nombre</label>
-                <input
-                  type="text"
-                  value={editingUser.nombre}
-                  onChange={(e) => setEditingUser({...editingUser, nombre: e.target.value})}
-                  className="w-full border rounded px-3 py-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
-                <input
-                  type="email"
-                  value={editingUser.email}
-                  onChange={(e) => setEditingUser({...editingUser, email: e.target.value})}
-                  className="w-full border rounded px-3 py-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Rol</label>
-                <select
-                  value={editingUser.rol}
-                  onChange={(e) => {
-                    const newRol = e.target.value as 'ADMIN' | 'VALIDADOR' | 'MIEMBRO' | 'INVITADO';
-                    setEditingUser({
-                      ...editingUser,
-                      rol: newRol,
-                      canViewTrips: newRol === 'ADMIN' ? true : false,
-                      canViewRecorridos: newRol === 'ADMIN' ? true : false,
-                      canViewProduccion: newRol === 'ADMIN' ? true : false,
-                      canViewValidacion: newRol === 'ADMIN' ? true : false,
-                      canViewLiquidacion: newRol === 'ADMIN' ? true : false,
-                      canViewReportes: newRol === 'ADMIN' ? true : false,
-                      canViewUsuarios: newRol === 'ADMIN' ? true : false,
-                    });
-                  }}
-                  className="w-full border rounded px-3 py-2"
-                >
-                  <option value="ADMIN">ADMIN</option>
-                  <option value="VALIDADOR">VALIDADOR</option>
-                  <option value="MIEMBRO">MIEMBRO</option>
-                  <option value="INVITADO">INVITADO</option>
-                </select>
-              </div>
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={editingUser.activo}
-                  onChange={(e) => setEditingUser({...editingUser, activo: e.target.checked})}
-                  className="mr-2"
-                />
-                <label className="text-sm">Usuario activo</label>
-              </div>
-            </div>
-            <div className="flex justify-end space-x-2 mt-6">
-              <button
-                onClick={() => setEditingUser(null)}
-                className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => {
-                  handleUpdateUser(editingUser);
-                  setEditingUser(null);
-                }}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                Guardar
-              </button>
-            </div>
-          </div>
-        </div>
+        <UserEditModal
+          user={editingUser}
+          onChange={u => setEditingUser(u)}
+          onClose={() => { setEditingUser(null); setEditError(''); }}
+          onSave={() => handleUpdateUser(editingUser)}
+          saving={updatingId === editingUser.id}
+          error={editError}
+          roles={roles}
+        />
       )}
     </div>
   );

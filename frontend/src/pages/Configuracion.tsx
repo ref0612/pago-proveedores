@@ -4,6 +4,7 @@ import { apiGet } from '../services/api';
 import React from 'react';
 import { AlertContext } from '../App';
 import { useContext } from 'react';
+import UserEditModal from '../components/UserEditModal';
 
 interface Usuario {
   id: number;
@@ -20,6 +21,13 @@ const tabs = [
   { label: 'Seguridad', key: 'seguridad', icon: <Shield className="w-5 h-5 mr-2" /> },
   { label: 'Notificaciones', key: 'notificaciones', icon: <Bell className="w-5 h-5 mr-2" /> },
   { label: 'Sistema', key: 'sistema', icon: <Database className="w-5 h-5 mr-2" /> },
+];
+
+const roles = [
+  { value: 'ADMIN', label: 'Administrador' },
+  { value: 'VALIDADOR', label: 'Validador' },
+  { value: 'MIEMBRO', label: 'Miembro' },
+  { value: 'INVITADO', label: 'Invitado' },
 ];
 
 const rolLabel = {
@@ -44,6 +52,8 @@ const Configuracion = () => {
   const [editingUser, setEditingUser] = useState<Usuario | null>(null);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const { setAlerts } = useContext(AlertContext);
+  const [alertShown, setAlertShown] = useState(false);
+  const [lastEditedId, setLastEditedId] = useState<number | null>(null);
 
   const handleUpdateUser = async (updatedUser: Usuario) => {
     setError('');
@@ -60,7 +70,10 @@ const Configuracion = () => {
         const userFromServer = await response.json();
         setUsuarios(prev => prev.map(u => u.id === userFromServer.id ? userFromServer : u));
         setEditingUser(null);
-        setAlerts(alerts => [...alerts, { message: 'Usuario actualizado correctamente.', type: 'success' }]);
+        if (lastEditedId !== updatedUser.id) {
+          setAlerts(alerts => [...alerts, { message: 'Usuario actualizado correctamente.', type: 'success' }]);
+          setLastEditedId(updatedUser.id);
+        }
       } else {
         setError('Error al actualizar usuario');
       }
@@ -91,7 +104,7 @@ const Configuracion = () => {
         {tabs.map(tab => (
           <button
             key={tab.key}
-            className={`px-4 py-2 -mb-px border-b-2 transition-colors text-base font-medium focus:outline-none flex items-center ${activeTab === tab.key ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-blue-600'}`}
+            className={`px-4 py-2 -mb-px text-sm border-b-2 transition-colors text-base font-small focus:outline-none flex items-center ${activeTab === tab.key ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-blue-600'}`}
             onClick={() => setActiveTab(tab.key)}
             type="button"
           >
@@ -143,7 +156,10 @@ const Configuracion = () => {
                       <td className="px-4 py-3 whitespace-nowrap flex gap-3 items-center">
                         <button
                           className="px-3 py-1 rounded-md bg-blue-600 text-white text-xs font-medium shadow-sm hover:bg-blue-700 hover:text-blue-50 shadow transition-colors"
-                          onClick={() => setEditingUser(user)}
+                          onClick={() => {
+                            setEditingUser(user);
+                            setLastEditedId(null);
+                          }}
                         >
                           Editar
                         </button>
@@ -155,90 +171,15 @@ const Configuracion = () => {
             </div>
           )}
           {editingUser && (
-            <div
-              className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 animate-fadein"
-              onClick={() => setEditingUser(null)}
-            >
-              <div
-                className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-0 overflow-hidden animate-fadein-up"
-                onClick={e => e.stopPropagation()}
-              >
-                {/* Cabecera */}
-                <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-b">
-                  <div className="flex items-center gap-2">
-                    <User className="w-6 h-6 text-blue-500" />
-                    <h3 className="text-lg font-semibold text-gray-800">Editar Usuario</h3>
-                  </div>
-                  <button onClick={() => setEditingUser(null)} className="text-gray-400 hover:text-red-500 p-1 rounded transition-colors">
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-                {/* Contenido */}
-                <div className="p-6 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1 text-gray-700">Nombre</label>
-                    <input
-                      type="text"
-                      value={editingUser.nombre}
-                      onChange={(e) => setEditingUser({...editingUser, nombre: e.target.value})}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1 text-gray-700">Email</label>
-                    <input
-                      type="email"
-                      value={editingUser.email}
-                      onChange={(e) => setEditingUser({...editingUser, email: e.target.value})}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1 text-gray-700">Rol</label>
-                    <select
-                      value={editingUser.rol}
-                      onChange={(e) => {
-                        const newRol = e.target.value as Usuario['rol'];
-                        setEditingUser({ ...editingUser, rol: newRol });
-                      }}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
-                    >
-                      <option value="ADMIN">Administrador</option>
-                      <option value="VALIDADOR">Validador</option>
-                      <option value="MIEMBRO">Miembro</option>
-                      <option value="INVITADO">Invitado</option>
-                    </select>
-                  </div>
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={editingUser.activo}
-                      onChange={(e) => setEditingUser({...editingUser, activo: e.target.checked})}
-                      className="mr-2 accent-blue-500"
-                    />
-                    <label className="text-sm text-gray-700">Usuario activo</label>
-                  </div>
-                  {error && <div className="text-red-600 text-sm mt-2">{error}</div>}
-                </div>
-                {/* Botones */}
-                <div className="flex justify-end gap-2 px-6 py-4 bg-gray-50 border-t">
-                  <button
-                    onClick={() => setEditingUser(null)}
-                    className="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-100 transition"
-                    disabled={updatingId === editingUser.id}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={() => handleUpdateUser(editingUser)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-sm"
-                    disabled={updatingId === editingUser.id}
-                  >
-                    {updatingId === editingUser.id ? 'Guardando...' : 'Guardar'}
-                  </button>
-                </div>
-              </div>
-            </div>
+            <UserEditModal
+              user={editingUser}
+              onChange={u => setEditingUser(u)}
+              onClose={() => { setEditingUser(null); setError(''); }}
+              onSave={() => handleUpdateUser(editingUser)}
+              saving={updatingId === editingUser.id}
+              error={error}
+              roles={roles}
+            />
           )}
         </div>
       ) : (

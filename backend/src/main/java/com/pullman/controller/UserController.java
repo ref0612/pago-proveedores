@@ -48,8 +48,26 @@ public class UserController {
     }
     
     @GetMapping
-    public List<User> getAllUsers() {
-        return userService.findAll();
+    public List<Map<String, Object>> getAllUsers() {
+        List<User> users = userService.findAll();
+        List<Map<String, Object>> result = new java.util.ArrayList<>();
+        for (User u : users) {
+            Map<String, Object> userData = new java.util.HashMap<>();
+            userData.put("id", u.getId());
+            userData.put("nombre", u.getNombre());
+            userData.put("email", u.getEmail());
+            userData.put("rol", u.getRol());
+            userData.put("activo", u.isActivo());
+            userData.put("canViewTrips", u.isCanViewTrips());
+            userData.put("canViewRecorridos", u.isCanViewRecorridos());
+            userData.put("canViewProduccion", u.isCanViewProduccion());
+            userData.put("canViewValidacion", u.isCanViewValidacion());
+            userData.put("canViewLiquidacion", u.isCanViewLiquidacion());
+            userData.put("canViewReportes", u.isCanViewReportes());
+            userData.put("canViewUsuarios", u.isCanViewUsuarios());
+            result.add(userData);
+        }
+        return result;
     }
     
     @GetMapping("/{id}")
@@ -65,11 +83,29 @@ public class UserController {
     }
     
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User user) {
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User user) {
         return userService.findById(id)
                 .map(existing -> {
                     user.setId(id);
-                    return ResponseEntity.ok(userService.save(user));
+                    User updatedUser = userService.save(user);
+                    // Crear un mapa con solo los datos necesarios del usuario (sin password)
+                    Map<String, Object> userData = new HashMap<>();
+                    userData.put("id", updatedUser.getId());
+                    userData.put("nombre", updatedUser.getNombre());
+                    userData.put("email", updatedUser.getEmail());
+                    userData.put("rol", updatedUser.getRol());
+                    userData.put("activo", updatedUser.isActivo());
+                    userData.put("canViewTrips", updatedUser.isCanViewTrips());
+                    userData.put("canViewRecorridos", updatedUser.isCanViewRecorridos());
+                    userData.put("canViewProduccion", updatedUser.isCanViewProduccion());
+                    userData.put("canViewValidacion", updatedUser.isCanViewValidacion());
+                    userData.put("canViewLiquidacion", updatedUser.isCanViewLiquidacion());
+                    userData.put("canViewReportes", updatedUser.isCanViewReportes());
+                    userData.put("canViewUsuarios", updatedUser.isCanViewUsuarios());
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("message", "Usuario actualizado correctamente");
+                    response.put("user", userData);
+                    return ResponseEntity.ok(response);
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
