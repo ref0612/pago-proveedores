@@ -98,11 +98,11 @@ const Configuracion = () => {
     <div className="max-w-8xl mx-[30px] p-0">
       <h2 className="text-2xl font-bold mb-1 text-gray-900">Configuración del Sistema</h2>
       <p className="text-gray-500 mb-6">Gestiona la configuración general del sistema de liquidación</p>
-      <div className="border-b border-gray-200  flex gap-2">
+      <div className="flex gap-2 bg-white border border-gray-200 rounded-t-lg px-4 pt-2">
         {tabs.map(tab => (
           <button
             key={tab.key}
-            className={`px-4 py-2 -mb-px text-sm border-b-2 transition-colors text-base font-small focus:outline-none flex items-center ${activeTab === tab.key ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-blue-600'}`}
+            className={`px-4 py-2 -mb-px text-sm border-b-2 transition-colors text-base font-small focus:outline-none flex items-center ${activeTab === tab.key ? 'border-blue-600 text-blue-700 bg-white' : 'border-transparent text-gray-500 hover:text-blue-600'}`}
             onClick={() => setActiveTab(tab.key)}
             type="button"
           >
@@ -112,7 +112,7 @@ const Configuracion = () => {
         ))}
       </div>
       {activeTab === 'usuarios' ? (
-        <div className="bg-white rounded-xl shadow p-6">
+        <div className="bg-white rounded-b-xl shadow p-6 border-t-0">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-xl font-semibold text-gray-800">Gestión de Usuarios</h3>
