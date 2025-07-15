@@ -77,7 +77,7 @@ export default function Usuarios() {
         setUsuarios(prev => prev.map(u => u.id === userFromServer.id ? userFromServer : u));
         setEditingUser(null);
         if (lastEditedId.current !== updatedUser.id) {
-          setAlerts(alerts => [...alerts, { message: 'Usuario actualizado correctamente.', type: 'success' }]);
+          setAlerts([{ message: 'Usuario actualizado correctamente.', type: 'success' }]);
           lastEditedId.current = updatedUser.id;
         }
       } else {

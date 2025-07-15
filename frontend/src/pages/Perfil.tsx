@@ -53,14 +53,14 @@ export default function Perfil() {
     try {
       await apiPut(`/users/${user.id}/password`, { oldPassword, newPassword });
       setSuccess('Contraseña actualizada correctamente.');
-      setAlerts(alerts => [...alerts, { message: 'Contraseña actualizada correctamente.' }]);
+      setAlerts([{ message: 'Contraseña actualizada correctamente.' }]);
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err: any) {
       const errorMsg = err?.response?.data?.error || 'Error al cambiar la contraseña.';
       setError(errorMsg);
-      setAlerts(alerts => [...alerts, { message: errorMsg, type: 'error' }]);
+      setAlerts([{ message: errorMsg, type: 'error' }]);
     } finally {
       setLoading(false);
     }
@@ -78,7 +78,7 @@ export default function Perfil() {
     try {
       const response = await apiPut(`/users/${user.id}/nombre`, { nombre: newName.trim() });
       setNameSuccess('Nombre actualizado correctamente.');
-      setAlerts(alerts => [...alerts, { message: 'Nombre actualizado correctamente.' }]);
+      setAlerts([{ message: 'Nombre actualizado correctamente.' }]);
       
       // Actualizar el contexto de usuario con el nuevo nombre
       if (updateUser && response.data?.user) {

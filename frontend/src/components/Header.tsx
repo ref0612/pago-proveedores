@@ -123,7 +123,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
               <Bell className="h-7 w-7" />
               {/* Badge con contador de notificaciones no leídas */}
               {tieneNoLeidas ? (
-                <span className="absolute -top-1 -right-0.5 bg-red-500 text-white text-xs rounded-full h-5 min-w-5 flex items-center justify-center border-2 border-white">
+                <span className="absolute -top-1 -right-0.5 bg-red-500 text-white text-xs rounded-full h-5 min-w-5 flex items-center justify-center">
                   {cantidadNoLeidas > 9 ? '9+' : cantidadNoLeidas}
                 </span>
               ) : (
