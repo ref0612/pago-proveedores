@@ -83,7 +83,8 @@ const Configuracion = () => {
   }, [activeTab]);
 
   return (
-    <div className="max-w-8xl mx-[25px] p-2">
+    <div className='py-6'>
+    <div className="max-w-8xl mx-[30px] p-0">
       <h2 className="text-2xl font-bold mb-1 text-gray-900">Configuración del Sistema</h2>
       <p className="text-gray-500 mb-6">Gestiona la configuración general del sistema de liquidación</p>
       <div className="border-b border-gray-200  flex gap-2">
@@ -100,7 +101,7 @@ const Configuracion = () => {
         ))}
       </div>
       {activeTab === 'usuarios' ? (
-        <div className="bg-white rounded-xl shadow p-8">
+        <div className="bg-white rounded-xl shadow p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-xl font-semibold text-gray-800">Gestión de Usuarios</h3>
@@ -129,7 +130,7 @@ const Configuracion = () => {
                 <tbody>
                   {usuarios.map((user, idx) => (
                     <tr key={user.id || idx} className="border-b last:border-b-0 hover:bg-gray-50">
-                      <td className="px-4 py-3 whitespace-nowrap text-gray-900">{user.nombre}</td>
+                      <td className="px-4 py-3 whitespace-nowrap font-semibold text-gray-900">{user.nombre}</td>
                       <td className="px-4 py-3 whitespace-nowrap text-gray-700">{user.email}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${rolColor[user.rol]}`}>{rolLabel[user.rol]}</span>
@@ -141,7 +142,7 @@ const Configuracion = () => {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap flex gap-3 items-center">
                         <button
-                          className="px-3 py-1 rounded-md border border-blue-200 bg-blue-50 text-blue-700 text-sm font-medium shadow-sm hover:bg-blue-100 hover:text-blue-800 transition-colors"
+                          className="px-3 py-1 rounded-md bg-blue-600 text-white text-xs font-medium shadow-sm hover:bg-blue-700 hover:text-blue-50 shadow transition-colors"
                           onClick={() => setEditingUser(user)}
                         >
                           Editar
@@ -245,6 +246,7 @@ const Configuracion = () => {
           <span>Contenido de la pestaña <b>{tabs.find(t => t.key === activeTab)?.label}</b> próximamente...</span>
         </div>
       )}
+    </div>
     </div>
   );
 };
