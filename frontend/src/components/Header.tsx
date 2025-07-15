@@ -1,9 +1,22 @@
 import { useAuth } from '../hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Bell, Menu, LogOut, User, ChevronDown, Settings } from 'lucide-react';
 import NotificacionesDropdown from './NotificacionesDropdown';
 import { useRef, useEffect, useState } from 'react';
 import { useNotificaciones } from '../hooks/useAuth';
+
+// Mapeo de rutas a títulos de módulo
+const ROUTE_TITLES: Record<string, string> = {
+  '/dashboard': 'Dashboard',
+  '/viajes': 'Gestión de Viajes',
+  '/liquidaciones': 'Liquidaciones',
+  '/produccion': 'Producción',
+  '/reportes': 'Reportes',
+  '/configuracion': 'Configuración',
+  '/perfil': 'Mi Perfil',
+  '/usuarios': 'Gestión de Usuarios',
+  '/roles': 'Gestión de Roles',
+};
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -13,10 +26,17 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
   const { user, logout } = useAuth();
   const { notificaciones } = useNotificaciones();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showNotificaciones, setShowNotificaciones] = useState(false);
   const notificacionesRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  
+  // Obtener el título de la página actual
+  const getPageTitle = () => {
+    const currentPath = location.pathname;
+    return ROUTE_TITLES[currentPath] || '';
+  };
 
   useEffect(() => {
     if (!showNotificaciones) return;
@@ -69,8 +89,10 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
     return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
   };
 
-  // Determinar si hay notificaciones no leídas desde el contexto global
-  const tieneNoLeidas = notificaciones.some(n => !n.leida);
+  // Contar notificaciones no leídas
+  const notificacionesNoLeidas = notificaciones.filter(n => !n.leida);
+  const tieneNoLeidas = notificacionesNoLeidas.length > 0;
+  const cantidadNoLeidas = notificacionesNoLeidas.length;
 
   // Agregar animación de respiración usando Tailwind
   const breathingAnimation = `animate-breathing`;
@@ -86,21 +108,26 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
           >
             <Menu className="w-6 h-6" />
           </button>
+          <h1 className="text-xl font-semibold text-gray-800 hidden md:block">
+            {getPageTitle()}
+          </h1>
         </div>
         
         <div className="flex items-center space-x-4">
           <div className="relative" ref={notificacionesRef}>
             <button
-              className="p-2 w-10 h-10 text-gray-600 hover:text-cyan-700 relative rounded-full hover:bg-cyan-50 transition-all duration-200 flex items-center justify-center shadow-sm"
+              className="p-2 w-10 h-10 text-gray-600 hover:text-cyan-700 relative rounded-full hover:bg-cyan-50 transition-all duration-200 flex items-center justify-center"
               onClick={() => setShowNotificaciones((v) => !v)}
               aria-label="Notificaciones"
             >
               <Bell className="h-7 w-7" />
-              {/* Badge con animación de respiración si hay no leídas, verde si no hay */}
+              {/* Badge con contador de notificaciones no leídas */}
               {tieneNoLeidas ? (
-                <span className={`absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-breathing border-2 border-white`}></span>
+                <span className="absolute -top-1 -right-0.5 bg-red-500 text-white text-xs font-bold rounded-full h-5 min-w-5 flex items-center justify-center border-2 border-white">
+                  {cantidadNoLeidas > 9 ? '9+' : cantidadNoLeidas}
+                </span>
               ) : (
-                <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"></span>
+                <span className="absolute top-0 right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></span>
               )}
             </button>
             {showNotificaciones && (

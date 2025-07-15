@@ -72,9 +72,25 @@ export default function Perfil() {
     try {
       const response = await apiPut(`/users/${user.id}/nombre`, { nombre: newName.trim() });
       setNameSuccess('Nombre actualizado correctamente.');
+      
       // Actualizar el contexto de usuario con el nuevo nombre
       if (updateUser && response.data?.user) {
-        updateUser(response.data.user);
+        // Crear un nuevo objeto de usuario con los datos actualizados
+        const updatedUser = {
+          ...user,
+          nombre: response.data.user.nombre,
+          email: response.data.user.email,
+          rol: response.data.user.rol,
+          activo: response.data.user.activo,
+          canViewTrips: response.data.user.canViewTrips,
+          canViewRecorridos: response.data.user.canViewRecorridos,
+          canViewProduccion: response.data.user.canViewProduccion,
+          canViewValidacion: response.data.user.canViewValidacion,
+          canViewLiquidacion: response.data.user.canViewLiquidacion,
+          canViewReportes: response.data.user.canViewReportes,
+          canViewUsuarios: response.data.user.canViewUsuarios
+        };
+        updateUser(updatedUser);
       }
       setEditingName(false);
     } catch (err: any) {
@@ -115,16 +131,18 @@ export default function Perfil() {
       {/* Tabs */}
       <div className="flex border-b border-gray-200 mb-6">
         <button
-          className={`px-4 py-2 -mb-px border-b-2 transition-colors text-sm font-medium focus:outline-none ${tab === 'datos' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-blue-600'}`}
+          className={`px-4 py-2 -mb-px border-b-2 transition-colors text-sm font-medium focus:outline-none flex items-center gap-2 ${tab === 'datos' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-blue-600'}`}
           onClick={() => setTab('datos')}
         >
-          Datos personales
+          <User className="w-4 h-4" />
+          <span>Datos personales</span>
         </button>
         <button
-          className={`ml-2 px-4 py-2 -mb-px border-b-2 transition-colors text-sm font-medium focus:outline-none ${tab === 'seguridad' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-blue-600'}`}
+          className={`ml-2 px-4 py-2 -mb-px border-b-2 transition-colors text-sm font-medium focus:outline-none flex items-center gap-2 ${tab === 'seguridad' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-blue-600'}`}
           onClick={() => setTab('seguridad')}
         >
-          Seguridad
+          <Shield className="w-4 h-4" />
+          <span>Seguridad</span>
         </button>
       </div>
       {/* Contenido de la pestaña activa */}

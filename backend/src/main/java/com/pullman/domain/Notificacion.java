@@ -21,6 +21,8 @@ public class Notificacion {
 
     private Long referenciaId;
 
+    private Boolean eliminada = false;
+
     // Getters y setters
     public Long getId() {
         return id;
@@ -77,4 +79,12 @@ public class Notificacion {
     public void setReferenciaId(Long referenciaId) {
         this.referenciaId = referenciaId;
     }
-} 
+
+    public Boolean getEliminada() {
+        return eliminada;
+    }
+
+    public void setEliminada(Boolean eliminada) {
+        this.eliminada = eliminada;
+    }
+}

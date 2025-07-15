@@ -4,6 +4,7 @@ import { useAuth } from './hooks/useAuth';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Reportes from './pages/Reportes';
+import Configuracion from './pages/Configuracion';
 import Usuarios from './pages/Usuarios';
 import TripsPage from './pages/TripsPage';
 import Privileges from './pages/Privileges';
@@ -90,6 +91,13 @@ function AppContent() {
           <RequireAuth roles={['ADMIN']}>
             <Layout>
               <Usuarios />
+            </Layout>
+          </RequireAuth>
+        } />
+        <Route path="/configuracion" element={
+          <RequireAuth roles={['ADMIN']}>
+            <Layout>
+              <Configuracion />
             </Layout>
           </RequireAuth>
         } />

@@ -99,9 +99,26 @@ public class UserController {
                 .map(user -> {
                     user.setNombre(nuevoNombre.trim());
                     User updatedUser = userService.save(user);
+                    
+                    // Crear un mapa con solo los datos necesarios del usuario
+                    Map<String, Object> userData = new HashMap<>();
+                    userData.put("id", updatedUser.getId());
+                    userData.put("nombre", updatedUser.getNombre());
+                    userData.put("email", updatedUser.getEmail());
+                    userData.put("rol", updatedUser.getRol());
+                    userData.put("activo", updatedUser.isActivo());
+                    // Agregar los demás campos necesarios sin incluir la contraseña
+                    userData.put("canViewTrips", updatedUser.isCanViewTrips());
+                    userData.put("canViewRecorridos", updatedUser.isCanViewRecorridos());
+                    userData.put("canViewProduccion", updatedUser.isCanViewProduccion());
+                    userData.put("canViewValidacion", updatedUser.isCanViewValidacion());
+                    userData.put("canViewLiquidacion", updatedUser.isCanViewLiquidacion());
+                    userData.put("canViewReportes", updatedUser.isCanViewReportes());
+                    userData.put("canViewUsuarios", updatedUser.isCanViewUsuarios());
+                    
                     Map<String, Object> response = new HashMap<>();
                     response.put("message", "Nombre actualizado correctamente");
-                    response.put("user", updatedUser);
+                    response.put("user", userData);
                     return ResponseEntity.ok(response);
                 })
                 .orElse(ResponseEntity.notFound().build());

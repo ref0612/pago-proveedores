@@ -37,4 +37,10 @@ public class NotificacionController {
         Optional<Notificacion> notificacionOpt = notificacionService.marcarComoNoLeida(id);
         return notificacionOpt.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
-} 
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminarNotificacion(@PathVariable Long id) {
+        notificacionService.eliminarNotificacion(id);
+        return ResponseEntity.noContent().build();
+    }
+}

@@ -71,6 +71,25 @@ export const apiPut = async (endpoint: string, data?: any) => {
   return response.json();
 };
 
+// Función genérica para peticiones DELETE
+export const apiDelete = async (endpoint: string) => {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  
+  // Para respuestas sin contenido (204 No Content)
+  if (response.status === 204) {
+    return null;
+  }
+  
+  return response.json();
+};
+
 // Función específica para subir archivos CSV
 export const uploadCsvFile = async (file: File) => {
   const formData = new FormData();

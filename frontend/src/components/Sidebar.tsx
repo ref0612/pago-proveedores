@@ -49,9 +49,10 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
     { path: '/validacion', label: 'Validación', icon: CheckCircle, show: user.canViewValidacion },
     { path: '/liquidacion', label: 'Liquidación', icon: CreditCard, show: user.canViewLiquidacion },
     { path: '/reportes', label: 'Reportes', icon: BarChart3, show: user.canViewReportes },
-    { path: '/recorridos', label: 'Zonas', icon: Building2, show: true, extra: true },
-    { path: '/usuarios', label: 'Usuarios', icon: Users, show: true, extra: true },
-    { path: '/privileges', label: 'Privilegios', icon: Settings, show: true, extra: true },
+    { path: '/configuracion', label: 'Configuración', icon: Settings, show: user.rol === 'ADMIN' },
+    { path: '/recorridos', label: 'Zonas', icon: Building2, show: user.rol === 'ADMIN', extra: true },
+    { path: '/usuarios', label: 'Usuarios', icon: Users, show: user.rol === 'ADMIN', extra: true },
+    { path: '/privileges', label: 'Privilegios', icon: Settings, show: user.rol === 'ADMIN', extra: true },
   ];
 
   return (
