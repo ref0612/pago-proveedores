@@ -84,7 +84,7 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
         </div>
 
         {/* Navegación */}
-        <nav className="flex-1 p-4 overflow-y-auto">
+        <nav className="flex-1 p-1 overflow-y-auto">
           <div className="space-y-1">
             {modules.filter((m) => m.show && !m.extra).map(({ path, label, icon: Icon }) => {
               const active = routerLocation.pathname.startsWith(path);
@@ -92,7 +92,7 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
                 <button
                   key={path}
                   onClick={() => handleNavigation(path)}
-                  className={`w-full text-left px-4 py-2 rounded-lg flex items-center group transition-all duration-200 font-medium
+                  className={`w-full text-left px-2 py-2 rounded-lg flex items-center group transition-all duration-200 font-medium
                     ${active ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}
                   `}
                 >
@@ -111,7 +111,7 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
                 <button
                   key={path}
                   onClick={() => handleNavigation(path)}
-                  className={`w-full text-left px-4 py-2 rounded-lg flex items-center group transition-all duration-200 text-sm
+                  className={`w-full text-left px-2 py-2 rounded-lg flex items-center group transition-all duration-200 text-sm
                     ${active ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}
                   `}
                 >

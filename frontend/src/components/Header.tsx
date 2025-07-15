@@ -160,7 +160,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
                   </div>
                   <div className="border-t border-gray-100 my-2" />
                   <button
-                    className="w-full text-left px-4 py-2 text-gray-700 hover:bg-cyan-50 flex items-center gap-2 text-sm transition-colors duration-200"
+                    className="w-full text-sm text-left px-4 py-2 text-gray-700 hover:bg-cyan-50 flex items-center gap-2 text-sm transition-colors duration-200"
                     onClick={() => { setShowUserMenu(false); navigate('/perfil'); }}
                   >
                     <User className="w-4 h-4 text-cyan-600" /> Perfil
