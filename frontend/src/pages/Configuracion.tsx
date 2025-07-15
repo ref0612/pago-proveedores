@@ -153,7 +153,7 @@ const Configuracion = () => {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap flex gap-3 items-center">
                         <button
-                          className="px-3 py-1 rounded-md bg-blue-600 text-white text-xs font-medium shadow-sm hover:bg-blue-700 hover:text-blue-50 shadow transition-colors"
+                          className="px-3 py-1 rounded-lg bg-blue-600 text-white text-xs font-medium shadow-sm hover:bg-blue-700 hover:text-blue-50 shadow transition-colors"
                           onClick={() => {
                             setEditingUser(user);
                             setLastEditedId(null);
