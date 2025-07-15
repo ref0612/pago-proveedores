@@ -2,9 +2,12 @@ import React, { useState } from 'react';
 import { User, Shield, Edit, Save, X } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { apiPut } from '../services/api';
+import { useContext } from 'react';
+import { AlertContext } from '../App';
 
 export default function Perfil() {
   const { user, updateUser } = useAuth();
+  const { setAlerts } = useContext(AlertContext);
   const [tab, setTab] = useState<'datos' | 'seguridad'>('datos');
 
   // Estado para cambio de contraseña
@@ -50,11 +53,14 @@ export default function Perfil() {
     try {
       await apiPut(`/users/${user.id}/password`, { oldPassword, newPassword });
       setSuccess('Contraseña actualizada correctamente.');
+      setAlerts(alerts => [...alerts, { message: 'Contraseña actualizada correctamente.' }]);
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err: any) {
-      setError(err?.response?.data?.error || 'Error al cambiar la contraseña.');
+      const errorMsg = err?.response?.data?.error || 'Error al cambiar la contraseña.';
+      setError(errorMsg);
+      setAlerts(alerts => [...alerts, { message: errorMsg, type: 'error' }]);
     } finally {
       setLoading(false);
     }
@@ -72,6 +78,7 @@ export default function Perfil() {
     try {
       const response = await apiPut(`/users/${user.id}/nombre`, { nombre: newName.trim() });
       setNameSuccess('Nombre actualizado correctamente.');
+      setAlerts(alerts => [...alerts, { message: 'Nombre actualizado correctamente.' }]);
       
       // Actualizar el contexto de usuario con el nuevo nombre
       if (updateUser && response.data?.user) {
@@ -123,7 +130,47 @@ export default function Perfil() {
           </span>
         </div>
         <div>
-          <h2 className="text-xl font-semibold text-gray-800">{user.nombre}</h2>
+          <div className="flex items-center gap-2">
+            {!editingName ? (
+              <>
+                <h2 className="text-xl font-semibold text-gray-800">{user.nombre}</h2>
+                <button
+                  onClick={startEditingName}
+                  className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
+                >
+                  <Edit className="w-4 h-4" />
+                  Editar
+                </button>
+              </>
+            ) : (
+              <form onSubmit={handleUpdateName} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  className="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  value={newName}
+                  onChange={e => setNewName(e.target.value)}
+                  placeholder="Ingresa tu nombre completo"
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  className="bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 transition-colors text-sm font-medium flex items-center gap-1"
+                  disabled={nameLoading}
+                >
+                  {nameLoading ? 'Guardando...' : <Save className="w-4 h-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={cancelEditingName}
+                  className="bg-gray-300 text-gray-700 px-2 py-1 rounded hover:bg-gray-400 transition-colors text-sm font-medium flex items-center gap-1"
+                  disabled={nameLoading}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </form>
+            )}
+          </div>
+          {nameError && <div className="text-red-600 text-sm mt-1">{nameError}</div>}
           <p className="text-sm text-gray-500">{user.email}</p>
           <p className="text-xs text-gray-400">Rol: {user.rol}</p>
         </div>
@@ -149,57 +196,7 @@ export default function Perfil() {
       {tab === 'datos' && (
         <div className="space-y-4">
           <div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-500 text-sm">Nombre completo:</span>
-              {!editingName && (
-                <button
-                  onClick={startEditingName}
-                  className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
-                >
-                  <Edit className="w-3 h-3" />
-                  Editar
-                </button>
-              )}
-            </div>
-            {!editingName ? (
-              <div className="text-gray-800 font-medium">{user.nombre}</div>
-            ) : (
-              <form onSubmit={handleUpdateName} className="space-y-3">
-                <input
-                  type="text"
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-                  value={newName}
-                  onChange={e => setNewName(e.target.value)}
-                  placeholder="Ingresa tu nombre completo"
-                  autoFocus
-                />
-                {nameError && <div className="text-red-600 text-sm">{nameError}</div>}
-                {nameSuccess && <div className="text-green-600 text-sm">{nameSuccess}</div>}
-                <div className="flex gap-2">
-                  <button
-                    type="submit"
-                    className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors text-sm font-medium flex items-center gap-1"
-                    disabled={nameLoading}
-                  >
-                    {nameLoading ? 'Guardando...' : (
-                      <>
-                        <Save className="w-3 h-3" />
-                        Guardar
-                      </>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={cancelEditingName}
-                    className="bg-gray-300 text-gray-700 px-3 py-1 rounded hover:bg-gray-400 transition-colors text-sm font-medium flex items-center gap-1"
-                    disabled={nameLoading}
-                  >
-                    <X className="w-3 h-3" />
-                    Cancelar
-                  </button>
-                </div>
-              </form>
-            )}
+            
           </div>
           <div>
             <span className="text-gray-500 text-sm">Correo electrónico:</span>
@@ -248,8 +245,7 @@ export default function Perfil() {
                 autoComplete="new-password"
               />
             </div>
-            {error && <div className="text-red-600 text-sm">{error}</div>}
-            {success && <div className="text-green-600 text-sm">{success}</div>}
+            
             <button
               type="submit"
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors text-sm font-medium"

@@ -197,15 +197,12 @@ export default function NotificacionesDropdown({ onClose, onNoLeidasChange, onCa
     : notificaciones;
 
   return (
-    <div className="bg-white shadow-2xl rounded-xl p-0 max-h-104 overflow-y-auto border border-gray-200 min-w-[420px] animate-fadein ml-[-90px]">
+    <div className="bg-white shadow-2xl rounded-xl p-0 max-h-104 overflow-y-auto border border-gray-200 w-[90vw] max-w-xs sm:min-w-[320px] md:min-w-[420px] animate-fadein ml-0 md:ml-[-80px]">
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
         <div className="flex items-center gap-2">
           <span className="font-bold text-lg text-gray-800">Notificaciones</span>
         </div>
         <div className="flex items-center gap-2 relative">
-          <button onClick={fetchNotificaciones} title="Recargar" className="p-1 rounded hover:bg-blue-100 transition-colors">
-            <RefreshCcw className="w-5 h-5 text-blue-500" />
-          </button>
           <button
             onClick={() => setMenuAbierto((v) => !v)}
             title="Más opciones"
@@ -227,7 +224,7 @@ export default function NotificacionesDropdown({ onClose, onNoLeidasChange, onCa
                 className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50"
               >
                 <XCircle className="w-4 h-4" />
-                <span>Eliminar todas</span>
+                <span>Limpiar notificaciones</span>
               </button>
             </div>
           )}

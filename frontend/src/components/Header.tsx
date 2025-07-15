@@ -99,11 +99,11 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-      <div className="flex items-center justify-between px-6 py-2 min-h-[56px]">
+      <div className="flex items-center justify-between px-6 py-2 min-h-[63px]">
         <div className="flex items-center">
           <button
             onClick={onToggleSidebar}
-            className="p-2 rounded-md hover:bg-gray-100 transition-colors duration-200 mr-3 lg:hidden focus:outline-none focus:ring-2 focus:ring-cyan-300"
+            className="p-2 rounded-md hover:bg-gray-100 transition-colors duration-200 mr-3 md:hidden focus:outline-none"
             aria-label="Toggle menu"
           >
             <Menu className="w-6 h-6" />
@@ -123,7 +123,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
               <Bell className="h-7 w-7" />
               {/* Badge con contador de notificaciones no leídas */}
               {tieneNoLeidas ? (
-                <span className="absolute -top-1 -right-0.5 bg-red-500 text-white text-xs font-bold rounded-full h-5 min-w-5 flex items-center justify-center border-2 border-white">
+                <span className="absolute -top-1 -right-0.5 bg-red-500 text-white text-xs rounded-full h-5 min-w-5 flex items-center justify-center border-2 border-white">
                   {cantidadNoLeidas > 9 ? '9+' : cantidadNoLeidas}
                 </span>
               ) : (
@@ -140,7 +140,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
             
             <div className="flex items-center space-x-2 relative" ref={userMenuRef}>
               <button
-                className="w-10 h-10 bg-cyan-600 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-cyan-300 shadow-sm hover:scale-105 transition-transform duration-200"
+                className="w-10 h-10 bg-cyan-600 rounded-full flex items-center justify-center focus:outline-none  shadow-sm hover:scale-105 transition-transform duration-200"
                 onClick={() => setShowUserMenu((v) => !v)}
                 aria-label="Abrir menú de usuario"
               >
