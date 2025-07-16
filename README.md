@@ -120,38 +120,3 @@ frontend/
 ├── package.json       # Dependencias y scripts
 └── README.md
 ```
-
-## Ejemplo de formato para carga masiva (placeholder)
-
-> Cuando recibas el formato real, reemplaza este ejemplo.
-
-| fecha      | origen | destino | horario | tipologia | zona        | empresario | kilometraje |
-|------------|--------|---------|---------|-----------|-------------|------------|-------------|
-| 2024-07-01 | A      | B       | 08:00   | Bus A     | JB          | Empresa 1  | 120         |
-| 2024-07-01 | C      | D       | 09:00   | Bus B     | Norte Largo | Empresa 2  | 150         |
-
-- Soportado: CSV, XLSX (próximamente)
-- El botón de carga masiva está preparado en el módulo de Recorridos.
-
-## Integración frontend-backend
-
-- Los módulos están preparados para consumir endpoints REST del backend.
-- Para conectar, implementa los hooks de integración (`useRecorridosApi`, etc.) y apunta a la URL del backend en `.env`.
-- El backend expone endpoints REST para recorridos, producción, validación, pagos y reportes.
-
-## Mockups y diagramas
-
-- `/mockups`: Pantallas principales y flujos de usuario (puedes agregar imágenes o enlaces a Figma).
-- `/docs`: Diagramas de arquitectura, ERD, y flujos de proceso.
-
-## Notas finales
-
-- El sistema es modular, escalable y documentado.
-- Espacios y comentarios en el código para futuras integraciones (carga masiva, alertas automáticas, etc.).
-- Para dudas o mejoras, revisa los comentarios en el código y la documentación técnica.
-
----
-
-## Recursos adicionales
-
-- [Documentación oficial de Create React App (en inglés)](https://facebook.github.io/create-react-app/docs/getting-started)
