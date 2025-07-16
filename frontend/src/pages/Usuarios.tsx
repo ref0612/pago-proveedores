@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { AlertContext } from '../App';
 import UserEditModal from '../components/UserEditModal';
+import { SpinnerWithText } from '../components/ui/Spinner';
 
 interface User {
   id: number;
@@ -135,6 +136,10 @@ export default function Usuarios() {
   }
   // Solo mostrar loading si no se está editando.
   if (loading && !editingUser) {
-    return <div className="p-8">Cargando usuarios...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <SpinnerWithText size="lg" text="Cargando usuarios..." />
+      </div>
+    );
   }
 }

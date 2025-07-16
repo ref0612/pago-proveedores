@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { usePrivilegesApi, Privilege, RolePrivileges } from '../hooks/usePrivilegesApi';
+import { SpinnerWithText } from '../components/ui/Spinner';
 
 interface Role {
   value: string;
@@ -126,8 +127,8 @@ const Privileges: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-xl">Cargando privilegios...</div>
+      <div className="flex justify-center py-32">
+        <SpinnerWithText size="lg" text="Cargando privilegios..." />
       </div>
     );
   }

@@ -3,6 +3,8 @@ import Select from 'react-select';
 import Modal from 'react-modal';
 import { SingleValue } from 'react-select';
 import * as XLSX from 'xlsx';
+import { Plus, Trash2, Edit, X, Upload, AlertTriangle, CheckCircle } from 'lucide-react';
+import { SpinnerWithText } from '../../components/ui/Spinner';
 
 interface Tramo {
   origen: { value: string; label: string } | null;
@@ -520,7 +522,11 @@ const RegistroRecorridos: React.FC = () => {
           onClick={fetchUnconfiguredCities}
           disabled={loadingCities}
         >
-          {loadingCities ? 'Cargando...' : 'Ver tramos sin configurar'}
+          {loadingCities ? (
+            <div className="flex items-center justify-center">
+              <SpinnerWithText size="sm" text="Cargando tramos..." />
+            </div>
+          ) : 'Ver tramos sin configurar'}
         </button>
         <label className="bg-green-600 text-white px-4 py-2 rounded cursor-pointer">
           Carga masiva (Excel)

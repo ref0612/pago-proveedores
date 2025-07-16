@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Globe, Users, Shield, Bell, Database } from 'lucide-react';
+import { SpinnerWithText } from '../components/ui/Spinner';
 import { apiGet } from '../services/api';
 import { AlertContext } from '../App';
 import { useContext } from 'react';
@@ -162,7 +163,9 @@ const Configuracion = () => {
               </div>
               
               {loading ? (
-                <div className="text-center text-gray-500 py-8">Cargando usuarios...</div>
+                <div className="flex justify-center py-12">
+                  <SpinnerWithText size="lg" text="Cargando usuarios..." />
+                </div>
               ) : error ? (
                 <div className="text-center text-red-500 py-8">{error}</div>
               ) : (

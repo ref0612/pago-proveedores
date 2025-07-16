@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User, Shield, Edit, Save, X } from 'lucide-react';
+import { Spinner, SpinnerWithText } from '../components/ui/Spinner';
 import { useAuth } from '../hooks/useAuth';
 import { apiPut } from '../services/api';
 import { useContext } from 'react';
@@ -154,15 +155,17 @@ export default function Perfil() {
                 />
                 <button
                   type="submit"
-                  className="bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 transition-colors text-sm font-medium flex items-center gap-1"
+                  className="ml-2 p-1 rounded-full hover:bg-gray-100 flex items-center justify-center w-8 h-8"
                   disabled={nameLoading}
                 >
-                  {nameLoading ? 'Guardando...' : <Save className="w-4 h-4" />}
+                  {nameLoading ? (
+                    <Spinner size="sm" className="w-4 h-4 border-2" />
+                  ) : <Save className="w-4 h-4" />}
                 </button>
                 <button
                   type="button"
                   onClick={cancelEditingName}
-                  className="bg-gray-300 text-gray-700 px-2 py-1 rounded hover:bg-gray-400 transition-colors text-sm font-medium flex items-center gap-1"
+                  className="ml-2 p-1 rounded-full hover:bg-gray-100 flex items-center justify-center w-8 h-8"
                   disabled={nameLoading}
                 >
                   <X className="w-4 h-4" />
@@ -247,11 +250,12 @@ export default function Perfil() {
             </div>
             
             <button
-              type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors text-sm font-medium"
               disabled={loading}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 min-h-[36px]"
             >
-              {loading ? 'Guardando...' : 'Cambiar contraseña'}
+              {loading ? (
+                <SpinnerWithText size="sm" text="Guardando..." />
+              ) : 'Cambiar contraseña'}
             </button>
           </form>
         </div>

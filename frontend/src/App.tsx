@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -17,6 +17,7 @@ import { useState, createContext, useContext, useEffect } from 'react';
 import { ReactNode, Dispatch, SetStateAction } from 'react';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { useRef } from 'react';
+import { SpinnerWithText } from './components/ui/Spinner';
 
 // Definición del tipo de alerta
 export interface Alert {
@@ -38,7 +39,11 @@ function RequireAuth({ children, roles }: { children: ReactElement, roles?: stri
   const { user, loading } = useAuth();
   
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Cargando...</div>;
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-75 z-50">
+        <SpinnerWithText size="lg" text="Cargando aplicación..." className="bg-white p-6 rounded-lg shadow-xl" />
+      </div>
+    );
   }
   
   if (!user) return <Navigate to="/login" replace />;

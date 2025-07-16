@@ -2,7 +2,8 @@ import { useRef, useEffect, useState } from 'react';
 import { apiDelete, apiGet, apiPut } from '../services/api';
 import { useAuth, useNotificaciones } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCircle, FileCheck2, FileText, RefreshCcw, XCircle, MoreVertical, CheckCircle as CheckIcon } from 'lucide-react';
+import { Bell, CheckCircle, FileCheck2, FileText, RefreshCcw, XCircle, MoreVertical, CheckCircle as CheckIcon, Loader2 } from 'lucide-react';
+import { SpinnerWithText } from './ui/Spinner';
 
 interface Notificacion {
   id: number;
@@ -22,25 +23,16 @@ interface Props {
 function iconoPorTipo(tipo: string) {
   switch (tipo) {
     case 'VALIDACION':
-      return <FileCheck2 className="w-5 h-5 text-blue-500 mr-2" />;
+      return <FileCheck2 className=" p-2 rounded-lg mr-3 bg-orange-100 border-orange-200 text-orange-800 w-8 h-8 text-blue-500 mr-2" />;
     case 'AUTORIZACION':
-      return <CheckCircle className="w-5 h-5 text-green-500 mr-2" />;
+      return <CheckCircle className=" p-2 rounded-lg mr-3 bg-orange-100 border-orange-200 text-orange-800 w-8 h-8 text-green-500 mr-2" />;
     case 'LIQUIDACION':
-      return <FileText className="w-5 h-5 text-yellow-500 mr-2" />;
+      return <FileText className=" p-2 rounded-lg mr-3 bg-orange-100 border-orange-200 text-orange-800 w-8 h-8 text-yellow-500 mr-2" />;
     default:
       return <Bell className="w-5 h-5 text-gray-400 mr-2" />;
   }
 }
 
-function fechaAmigable(fecha: string) {
-  const date = new Date(fecha);
-  const now = new Date();
-  const diff = (now.getTime() - date.getTime()) / 1000;
-  if (diff < 60) return 'hace unos segundos';
-  if (diff < 3600) return `hace ${Math.floor(diff / 60)} min`;
-  if (diff < 86400) return `hace ${Math.floor(diff / 3600)} h`;
-  return date.toLocaleString();
-}
 
 export default function NotificacionesDropdown({ onClose, onNoLeidasChange, onCantidadNoLeidasChange }: Props) {
   const { user } = useAuth();
@@ -197,8 +189,8 @@ export default function NotificacionesDropdown({ onClose, onNoLeidasChange, onCa
     : notificaciones;
 
   return (
-    <div className="bg-white shadow-2xl rounded-xl p-0 max-h-104 overflow-y-auto border border-gray-200 w-[90vw] max-w-xs sm:min-w-[320px] md:min-w-[420px] animate-fadein ml-0 md:ml-[-80px]">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
+    <div className="bg-white shadow-1xl rounded-xl max-h-104 overflow-y-auto border border-gray-200 w-[90vw] max-w-xs sm:min-w-[320px] md:min-w-[420px] animate-fadein ml-0 md:ml-[-80px]">
+      <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100 bg-gray-50 bg-opacity-45 rounded-t-xl">
         <div className="flex items-center gap-2">
           <span className="font-bold text-lg text-gray-800">Notificaciones</span>
         </div>
@@ -230,9 +222,11 @@ export default function NotificacionesDropdown({ onClose, onNoLeidasChange, onCa
           )}
         </div>
       </div>
-      <div className="px-4 py-2 flex flex-col gap-2 border-b border-gray-100 bg-white">
+      <div className="px-4 py-2 flex flex-col gap-2 border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between">
-          <span className="text-xs text-gray-400">{notificaciones.filter(n => !n.leida).length} nuevas</span>
+          <span className={`text-xs rounded-lg px-3 py-0.5 ${notificaciones.filter(n => !n.leida).length > 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+            {notificaciones.filter(n => !n.leida).length} {notificaciones.filter(n => !n.leida).length === 1 ? 'nueva' : 'nuevas'}
+          </span>
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-600">Mostrar solo no leídas</span>
             <button
@@ -249,18 +243,20 @@ export default function NotificacionesDropdown({ onClose, onNoLeidasChange, onCa
         </div>
       </div>
       {loading ? (
-        <div className="text-center text-gray-500 py-8 animate-pulse">Cargando...</div>
+        <div className="flex items-center justify-center py-12">
+          <SpinnerWithText size="md" text="Cargando notificaciones..." />
+        </div>
       ) : notificacionesFiltradas.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-10 text-gray-400">
             <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
             <span className="text-sm">No tienes notificaciones</span>
         </div>
       ) : (
-        <ul className="p-2 space-y-2">
+        <ul className="p-0 space-y-0">
           {notificacionesFiltradas.map((n) => (
             <li
               key={n.id}
-              className={`group flex items-start gap-2 p-3 rounded-lg shadow-sm border transition-all duration-200 cursor-pointer ${n.leida ? 'bg-gray-50 border-gray-100' : 'bg-blue-50 border-blue-200 hover:bg-blue-100'}`}
+              className={`group flex items-start gap-2 p-3 border-b border-gray-200 shadow-sm transition-all duration-200 cursor-pointer ${n.leida ? 'bg-gray-50 border-gray-100' : 'bg-blue-50 border-blue-200 hover:bg-blue-100'}`}
               onClick={() => handleNotificacionClick(n)}
               title={n.tipo}
             >
@@ -278,26 +274,24 @@ export default function NotificacionesDropdown({ onClose, onNoLeidasChange, onCa
                     <XCircle className="w-4 h-4" />
                   </button>
                 </div>
-                <span className="block text-xs text-gray-400 mt-1">{fechaAmigable(n.fecha)}</span>
+                <div className="flex justify-between items-end">
+                <span className="block text-xs text-gray-500 mt-1">
+                  {new Date(n.fecha).toLocaleTimeString('es-CL', {month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit'})}
+                </span>
+              <div className="flex items-center gap-2">
+                
+                <button
+                  onClick={e => { 
+                    e.stopPropagation(); 
+                    n.leida ? marcarComoNoLeida(n.id) : marcarComoLeida(n.id); 
+                  }}
+                  className="text-[10px] font-light text-blue-600 hover:text-blue-800 hover:text-blue-50"
+                >
+                  {n.leida ? 'Marcar como no leída' : 'Marcar como leída'}
+                </button>
               </div>
-              <div className="flex flex-col items-center gap-1">
-                {!n.leida ? (
-                  <button
-                    onClick={e => { e.stopPropagation(); marcarComoLeida(n.id); }}
-                    className="w-4 h-4 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center"
-                    title="Marcar como leída"
-                  >
-                    <span className="w-2 h-2 bg-white rounded-full block"></span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={e => { e.stopPropagation(); marcarComoNoLeida(n.id); }}
-                    className="w-4 h-4 rounded-full bg-gray-400 hover:bg-gray-500 flex items-center justify-center"
-                    title="Marcar como no leída"
-                  >
-                    <span className="w-2 h-2 bg-white rounded-full block"></span>
-                  </button>
-                )}
+                </div>
+                 
               </div>
             </li>
           ))}
@@ -305,4 +299,4 @@ export default function NotificacionesDropdown({ onClose, onNoLeidasChange, onCa
       )}
     </div>
   );
-} 
+}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { SpinnerWithText } from '../components/ui/Spinner';
 import CsvImport from '../components/CsvImport';
 import Modal from '../components/Modal';
 import TripList from '../components/TripList';
@@ -214,7 +215,11 @@ const TripsPage: React.FC = () => {
             disabled={loading}
             className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
           >
-            {loading ? 'Cargando...' : 'Actualizar Datos'}
+            {loading ? (
+              <div className="flex items-center justify-center">
+                <SpinnerWithText size="sm" text="Actualizando..." />
+              </div>
+            ) : 'Actualizar Datos'}
           </button>
         </div>
 
@@ -312,9 +317,8 @@ const TripsPage: React.FC = () => {
 
         {/* Lista de viajes */}
         {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <span className="ml-3 text-gray-600">Cargando viajes...</span>
+          <div className="flex justify-center py-12">
+            <SpinnerWithText size="lg" text="Cargando viajes..." />
           </div>
         ) : (fechaValida && tripsFiltrados.length > 0) ? (
           <TripList trips={tripsFiltrados} onTripSelect={handleTripSelect} />
