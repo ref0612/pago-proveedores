@@ -5,7 +5,6 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Reportes from './pages/Reportes';
 import Configuracion from './pages/Configuracion';
-import Usuarios from './pages/Usuarios';
 import TripsPage from './pages/TripsPage';
 import Privileges from './pages/Privileges';
 import Layout from './components/Layout';
@@ -66,7 +65,7 @@ function AppContent() {
         setAlerts(alerts => alerts.slice(1));
         setExitingIdx(null);
       }, 250); // Duración de la animación
-    }, 4000);
+    }, 2500);
     return () => clearTimeout(timer);
   }, [alerts, exitingIdx]);
 
@@ -163,13 +162,6 @@ function AppContent() {
               </Layout>
             </RequireAuth>
           } />
-          <Route path="/usuarios" element={
-            <RequireAuth roles={['ADMIN']}>
-              <Layout>
-                <Usuarios />
-              </Layout>
-            </RequireAuth>
-          } />
           <Route path="/configuracion" element={
             <RequireAuth roles={['ADMIN']}>
               <Layout>
@@ -201,5 +193,4 @@ function AppContent() {
 function App() {
   return <AppContent />;
 }
-
 export default App;

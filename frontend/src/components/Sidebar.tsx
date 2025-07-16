@@ -51,7 +51,6 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
     { path: '/reportes', label: 'Reportes', icon: BarChart3, show: user.canViewReportes },
     { path: '/configuracion', label: 'Configuración', icon: Settings, show: user.rol === 'ADMIN' },
     { path: '/recorridos', label: 'Zonas', icon: Building2, show: user.rol === 'ADMIN', extra: true },
-    { path: '/usuarios', label: 'Usuarios', icon: Users, show: user.rol === 'ADMIN', extra: true },
     { path: '/privileges', label: 'Privilegios', icon: Settings, show: user.rol === 'ADMIN', extra: true },
   ];
 
@@ -59,8 +58,8 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
     <div
       className={`
         fixed top-0 left-0 h-full bg-white shadow-xl transition-all duration-300 ease-in-out z-50
-        ${isOpen ? 'w-64' : 'w-0'}
-        ${isHovered ? 'lg:w-64' : 'lg:w-0'}
+        ${isOpen ? 'w-72' : 'w-0'}
+        ${isHovered ? 'lg:w-72' : 'lg:w-0'}
         overflow-hidden
       `}
       onMouseEnter={onMouseEnter}
@@ -71,7 +70,7 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
       onClick={(e) => e.stopPropagation()}
     >
       {/* Sidebar content */}
-      <div className={`h-full flex flex-col w-64 ${!isOpen && !isHovered ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`h-full flex flex-col w-72 ${!isOpen && !isHovered ? 'opacity-0' : 'opacity-100'}`}>
         {/* Header del sidebar */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
           <h1 className={`text-xl font-bold ${!isHovered && 'lg:hidden'}`}>Pullman</h1>
@@ -92,7 +91,7 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
                 <button
                   key={path}
                   onClick={() => handleNavigation(path)}
-                  className={`w-full text-left px-2 py-2 rounded-lg flex items-center group transition-all duration-200 font-medium
+                  className={`w-full text-left px-3 py-3 ml-1 text-sm rounded-lg flex items-center group transition-all duration-200 font-low
                     ${active ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}
                   `}
                 >

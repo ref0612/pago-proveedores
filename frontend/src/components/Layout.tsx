@@ -45,7 +45,7 @@ export default function Layout({ children }: LayoutProps) {
       {/* Contenido principal */}
       <div 
         className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${
-          (isHovered || sidebarOpen) ? 'lg:ml-64' : 'lg:ml-0'
+          (isHovered || sidebarOpen) ? 'lg:ml-72' : 'lg:ml-0'
         }`}
       >
         {/* Header móvil */}

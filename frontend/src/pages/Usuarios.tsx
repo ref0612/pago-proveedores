@@ -133,79 +133,8 @@ export default function Usuarios() {
       </div>
     );
   }
-
-  // Solo mostrar loading si no se está editando
+  // Solo mostrar loading si no se está editando.
   if (loading && !editingUser) {
     return <div className="p-8">Cargando usuarios...</div>;
   }
-
-  console.log('Render Usuarios');
-  return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-6">Gestión de Usuarios</h1>
-      
-      {error && (
-        <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
-
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border border-gray-300">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="px-4 py-2 border">ID</th>
-              <th className="px-4 py-2 border">Nombre</th>
-              <th className="px-4 py-2 border">Email</th>
-              <th className="px-4 py-2 border">Rol</th>
-              <th className="px-4 py-2 border">Activo</th>
-              <th className="px-4 py-2 border">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {usuarios.map((usuario) => (
-              <tr key={usuario.id} className="hover:bg-gray-50">
-                <td className="px-4 py-2 border text-center">{usuario.id}</td>
-                <td className="px-4 py-2 border">{usuario.nombre}</td>
-                <td className="px-4 py-2 border">{usuario.email}</td>
-                <td className="px-4 py-2 border text-center">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    usuario.rol === 'ADMIN' ? 'bg-red-100 text-red-800' :
-                    usuario.rol === 'VALIDADOR' ? 'bg-blue-100 text-blue-800' :
-                    usuario.rol === 'MIEMBRO' ? 'bg-green-100 text-green-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {usuario.rol}
-                  </span>
-                </td>
-                <td className="px-4 py-2 border text-center">
-                  <span className={`px-2 py-1 rounded text-xs ${usuario.activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{usuario.activo ? 'Activo' : 'Inactivo'}</span>
-                </td>
-                <td className="px-4 py-2 border text-center">
-                  <button
-                    onClick={() => setEditingUser(usuario)}
-                    className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
-                  >
-                    Editar
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {/* Modal de edición reutilizable */}
-      {editingUser && (
-        <UserEditModal
-          user={editingUser}
-          onChange={u => setEditingUser(u)}
-          onClose={() => { setEditingUser(null); setEditError(''); }}
-          onSave={() => handleUpdateUser(editingUser)}
-          saving={updatingId === editingUser.id}
-          error={editError}
-          roles={roles}
-        />
-      )}
-    </div>
-  );
-} 
+}
