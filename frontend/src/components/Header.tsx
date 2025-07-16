@@ -116,7 +116,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
         <div className="flex items-center space-x-4">
           <div className="relative" ref={notificacionesRef}>
             <button
-              className="p-2 w-10 h-10 text-gray-600 hover:text-cyan-700 relative rounded-full hover:bg-cyan-50 transition-all duration-200 flex items-center justify-center"
+              className="p-2 w-10 h-10 text-gray-400 hover:text-gray-700 relative rounded-full hover:bg-gray-50 transition-all hover:scale-105 duration-200 flex items-center justify-center"
               onClick={() => setShowNotificaciones((v) => !v)}
               aria-label="Notificaciones"
             >

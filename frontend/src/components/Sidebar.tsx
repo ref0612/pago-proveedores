@@ -44,10 +44,10 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
   // Definición de rutas y módulos
   const modules: { path: string; label: string; icon: React.ElementType; show: boolean; extra?: boolean }[] = [
     { path: '/dashboard', label: 'Dashboard', icon: Home, show: true },
-    { path: '/trips', label: 'Viajes', icon: Route, show: user.canViewTrips },
-    { path: '/produccion', label: 'Producción', icon: Calculator, show: user.canViewProduccion },
-    { path: '/validacion', label: 'Validación', icon: CheckCircle, show: user.canViewValidacion },
-    { path: '/liquidacion', label: 'Liquidación', icon: CreditCard, show: user.canViewLiquidacion },
+    { path: '/trips', label: 'Registro de Recorridos', icon: Route, show: user.canViewTrips },
+    { path: '/produccion', label: 'Cálculo de Producción', icon: Calculator, show: user.canViewProduccion },
+    { path: '/validacion', label: 'Validación Operacional', icon: CheckCircle, show: user.canViewValidacion },
+    { path: '/liquidacion', label: 'Liquidación y Pagos', icon: CreditCard, show: user.canViewLiquidacion },
     { path: '/reportes', label: 'Reportes', icon: BarChart3, show: user.canViewReportes },
     { path: '/configuracion', label: 'Configuración', icon: Settings, show: user.rol === 'ADMIN' },
     { path: '/recorridos', label: 'Zonas', icon: Building2, show: user.rol === 'ADMIN', extra: true },
@@ -72,7 +72,7 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
       {/* Sidebar content */}
       <div className={`h-full flex flex-col w-72 ${!isOpen && !isHovered ? 'opacity-0' : 'opacity-100'}`}>
         {/* Header del sidebar */}
-        <div className="flex items-center justify-between p-[17.5px] bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+        <div className="flex items-center justify-between p-[17.5px] text-black border-b border-gray-200 mb-5">
           <h1 className={`text-xl font-bold ${!isHovered && 'lg:hidden'}`}>Pullman</h1>
           <button
             onClick={onClose}
@@ -91,11 +91,11 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
                 <button
                   key={path}
                   onClick={() => handleNavigation(path)}
-                  className={`w-full text-left px-3 py-3 ml-1 text-sm rounded-lg flex items-center group transition-all duration-200 font-low
-                    ${active ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}
+                  className={`w-full text-left px-3 py-3 text-sm rounded-lg flex items-center group transition-all duration-200 font-medium
+                    ${active ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:bg-gray-100'}
                   `}
                 >
-                  <Icon className={`w-5 h-5 mr-3 ${active ? 'text-blue-600' : 'text-gray-400 group-hover:text-blue-500'} transition-colors`} />
+                  <Icon className={`w-5 h-5 mr-2 ${active ? 'text-blue-600' : 'text-gray-400 group-hover:text-blue-500'} transition-colors`} />
                   <span className="flex-1 text-left">{label}</span>
                   {active && <span className="ml-2 w-2 h-2 rounded-full bg-blue-600"></span>}
                 </button>
