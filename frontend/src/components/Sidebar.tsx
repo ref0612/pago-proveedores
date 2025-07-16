@@ -57,7 +57,7 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
   return (
     <div
       className={`
-        fixed top-0 left-0 h-full bg-white shadow-xl transition-all duration-300 ease-in-out z-50
+        fixed top-0 left-0 h-full rounded-e-xl bg-white shadow-xl transition-all duration-300 ease-in-out z-50
         ${isOpen ? 'w-72' : 'w-0'}
         ${isHovered ? 'lg:w-72' : 'lg:w-0'}
         overflow-hidden
@@ -72,7 +72,7 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
       {/* Sidebar content */}
       <div className={`h-full flex flex-col w-72 ${!isOpen && !isHovered ? 'opacity-0' : 'opacity-100'}`}>
         {/* Header del sidebar */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+        <div className="flex items-center justify-between p-[17.5px] bg-gradient-to-r from-blue-600 to-blue-700 text-white">
           <h1 className={`text-xl font-bold ${!isHovered && 'lg:hidden'}`}>Pullman</h1>
           <button
             onClick={onClose}
@@ -121,8 +121,30 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
               );
             })}
           </div>
-        </nav>
+        
 
+
+
+
+        
+        </nav>
+        <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
+        <div className="flex items-center w-full">
+          <div className="flex-shrink-0">
+            <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
+              <Users className="h-4 w-4 text-gray-500" />
+            </div>
+          </div>
+          <div className="ml-3 flex-1 min-w-0">
+            <p className="text-xs font-medium text-gray-900 truncate">
+              Sistema de Liquidación v1.0
+            </p>
+            <p className="text-xs text-gray-500 truncate">
+              © {new Date().getFullYear()} Pullman Bus
+            </p>
+          </div>
+        </div>
+      </div>
       </div>
     </div>
   );
