@@ -92,12 +92,12 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
                   key={path}
                   onClick={() => handleNavigation(path)}
                   className={`w-full text-left px-3 py-3 text-sm rounded-lg flex items-center group transition-all duration-100 font-medium
-                    ${active ? 'bg-blue-50 text-blue-700 border-r-4 border-blue-600 shadow-sm' : 'text-gray-500 hover:bg-gray-100'}
+                    ${active ? 'bg-blue-50 text-[#01236A] border-r-4 border-[#01236A] shadow-sm' : 'text-gray-500 hover:bg-gray-100'}
                   `}
                 >
-                  <Icon className={`w-5 h-5 mr-2 ${active ? 'text-blue-600' : 'text-gray-400 group-hover:text-blue-500'} transition-colors`} />
+                  <Icon className={`w-5 h-5 mr-2 ${active ? 'text-[#01236A]' : 'text-gray-400 group-hover:text-[#01236A]'} transition-colors`} />
                   <span className="flex-1 text-left">{label}</span>
-                  {active && <span className="ml-2 w-2 h-2 rounded-full bg-blue-600"></span>}
+                  {active && <span className="ml-2 w-2 h-2 rounded-full bg-[#01236A]"></span>}
                 </button>
               );
             })}

@@ -91,12 +91,12 @@ export default function Login() {
               />
             </div>
 
-            <h1 className="text-xl text-center px-4 font-medium text-gray-900 border-b border-t border-gray-100 py-4">Portal de Gestión de Pagos a Proveedores</h1>
+            <h1 className="text-xl text-center px-4 font-medium text-[#01236A] border-b border-t border-gray-100 py-4">Portal de Gestión de Pagos a Proveedores</h1>
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <form className="space-y-6" onSubmit={handleLogin}>
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="email" className="block text-sm font-medium text-[#01236A] mb-1">
                       Correo electrónico
                     </label>
                     <div className="relative">
@@ -111,7 +111,7 @@ export default function Login() {
                         name="email"
                         type="email"
                         required
-                        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-[#01236A] focus:border-[#01236A] sm:text-sm"
+                        className="block w-full pl-10 pr-3 py-2 text-[#01236A] border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-[#01236A] focus:border-[#01236A] sm:text-sm"
                         placeholder="usuario@pullman.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -120,7 +120,7 @@ export default function Login() {
                   </div>
 
                   <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="password" className="block text-sm font-medium text-[#01236A] mb-1">
                       Contraseña
                     </label>
                     <div className="relative">
@@ -140,7 +140,7 @@ export default function Login() {
                           name="password"
                           type={showPassword ? "text" : "password"}
                           required
-                          className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-[#01236A] focus:border-[#01236A] sm:text-sm"
+                          className="block w-full pl-10 pr-10 py-2 text-[#01236A] border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-[#01236A] focus:border-[#01236A] sm:text-sm"
                           placeholder="••••••••"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
@@ -149,7 +149,7 @@ export default function Login() {
                           <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-[#01236A] focus:outline-none"
                             aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                           >
                             {showPassword ? (
@@ -188,7 +188,7 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#01236A] hover:bg-[#01236A]/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                    className="w-full flex justify-center items-center py-2.5 px-4 border rounded-lg shadow-sm text-sm font-medium text-white bg-[#01236A] hover:bg-[#01236A]/80 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                   >
                     {loading ? (
                       <>
@@ -219,12 +219,12 @@ export default function Login() {
                   <button
                     type="button"
                     onClick={handleInitializeUsers}
-                    className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors duration-200"
+                    className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none disabled:opacity-50 transition-colors duration-200"
                     disabled={loading}
                   >
                     {loading ? (
                       <>
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-[#01236A]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
@@ -238,7 +238,7 @@ export default function Login() {
               </div>
 
               <div className="mt-8 bg-gray-50 p-2 rounded-lg border-gray-200">
-                <h3 className="text-sm font-medium text-gray-900 mb-2">Credenciales de prueba</h3>
+                <h3 className="text-sm font-medium text-[#01236A] mb-2">Credenciales de prueba</h3>
                 <div className="space-y-1.5 text-sm text-gray-600">
                   <div className="flex items-start">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2">ADMIN</span>
@@ -272,7 +272,7 @@ export default function Login() {
                 </svg>
               </button>
               <div className="absolute bottom-full right-0 mb-2 w-64 bg-white p-3 rounded-lg shadow-lg text-sm text-gray-600 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                <p>Parque Nacional Torres del Paine, Región de la Patagonia de Chile</p>
+                <p>Parque Nacional Torres del Paine</p>
                 <p className="mt-1 text-xs text-gray-400">Foto de Marek Piwnicki</p>
               </div>
             </div>
