@@ -112,7 +112,7 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
             </div>
             <div className="ml-3 flex-1 min-w-0">
               <p className="text-xs font-medium text-gray-900 truncate">
-                Sistema de Liquidación v1.0
+                Sistema de Liquidación v1.0.1
               </p>
               <p className="text-xs text-gray-500 truncate">
                 © {new Date().getFullYear()} Pullman Bus
