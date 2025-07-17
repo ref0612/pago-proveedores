@@ -81,7 +81,7 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
       {/* Sidebar content */}
       <div className={`h-full flex flex-col w-72 ${!isOpen && !isHovered ? 'opacity-0' : 'opacity-100'}`}>
         {/* Header del sidebar */}
-        <div className="flex items-center justify-between p-3 text-black bg-[#F7F8FE]">
+        <div className="flex items-center justify-between p-3 text-black bg-[#F7F8FE] border-b border-gray-200">
           <div className={`flex items-center ${!isOpen && !isHovered ? 'lg:justify-center' : 'justify-start'} w-full`}>
             {isOpen || isHovered ? (
               <img 
@@ -109,7 +109,7 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
 
         {/* Navegación */}
         <nav className="flex-1 p-1 overflow-y-auto bg-[#F7F8FE]">
-          <div className="space-y-1 mt-6">
+          <div className="space-y-1">
             {modules.filter((m) => m.show).map(({ path, label, icon: Icon }) => {
               const active = routerLocation.pathname.startsWith(path);
               return (

@@ -68,7 +68,7 @@ export default function Login() {
       <div
         className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: 'url(/login1.jpg)',
+          backgroundImage: 'url(/login-bg-1.jpg)',
           backgroundAttachment: 'fixed',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
@@ -88,13 +88,14 @@ export default function Login() {
               <div className="flex items-center justify-center gap-2 mt-2">
               </div>
               <img
-                src="/Pullman_Bus.png"
+                src="/pullman-bus-logo.png"
                 alt="Pullman"
-                className="my-4 mx-8 h-8 w-200"
+                className="my-2 mx-auto h-18 w-300"
               />
             </div>
 
-            <h1 className="text-xl text-center px-4 font-medium text-[#01236A] border-b border-t border-gray-100 py-4">Portal de Gestión de Pagos a Proveedores</h1>
+            <h1 className="text-xl text-center px-4 font-bold text-[#01236A] border-b border-t border-gray-100 py-0">Portal de Gestión:<br/>
+              <span className="font-light">Pago a Proveedores</span></h1>
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <form className="space-y-6" onSubmit={handleLogin}>
                 <div className="space-y-4">

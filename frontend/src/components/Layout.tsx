@@ -52,7 +52,7 @@ export default function Layout({ children }: LayoutProps) {
         <Header onToggleSidebar={toggleSidebar} />
         
         {/* Contenido de la página */}
-        <main className="flex-1 overflow-auto p-4 lg:p-0">
+        <main className="flex-1 overflow-auto p-4 lg:p-0 bg-[#F7F8FE]">
           {children}
         </main>
       </div>
