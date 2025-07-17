@@ -40,12 +40,12 @@ function getDecenaActual(): string {
   const mes = ahora.getMonth() + 1; // getMonth() devuelve 0-11
   const año = ahora.getFullYear();
   const dia = ahora.getDate();
-  
+
   // Determinar qué decena estamos
   let decena = 1;
   if (dia > 20) decena = 3;
   else if (dia > 10) decena = 2;
-  
+
   return `${decena}${mes.toString().padStart(2, '0')}${año}`;
 }
 
@@ -54,10 +54,10 @@ function getFechasDecena(decenaStr: string): { desde: string; hasta: string } {
   const decena = parseInt(decenaStr.charAt(0));
   const mes = parseInt(decenaStr.substring(1, 3));
   const año = parseInt(decenaStr.substring(3));
-  
+
   let diaInicio = 1;
   let diaFin = 10;
-  
+
   if (decena === 2) {
     diaInicio = 11;
     diaFin = 20;
@@ -67,10 +67,10 @@ function getFechasDecena(decenaStr: string): { desde: string; hasta: string } {
     const ultimoDia = new Date(año, mes, 0).getDate();
     diaFin = ultimoDia;
   }
-  
+
   const desde = `${año}-${mes.toString().padStart(2, '0')}-${diaInicio.toString().padStart(2, '0')}`;
   const hasta = `${año}-${mes.toString().padStart(2, '0')}-${diaFin.toString().padStart(2, '0')}`;
-  
+
   return { desde, hasta };
 }
 
@@ -78,18 +78,18 @@ function getFechasDecena(decenaStr: string): { desde: string; hasta: string } {
 function generarOpcionesDecenas(): string[] {
   const opciones: string[] = [];
   const ahora = new Date();
-  
+
   for (let i = 0; i < 12; i++) {
     const fecha = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
     const mes = fecha.getMonth() + 1;
     const año = fecha.getFullYear();
-    
+
     // Agregar las 3 decenas del mes
     opciones.push(`1${mes.toString().padStart(2, '0')}${año}`);
     opciones.push(`2${mes.toString().padStart(2, '0')}${año}`);
     opciones.push(`3${mes.toString().padStart(2, '0')}${año}`);
   }
-  
+
   return opciones;
 }
 
@@ -129,7 +129,7 @@ const TripsPage: React.FC = () => {
     setLoading(true);
     setError(null);
     setLoadingProgress('Iniciando carga...');
-    
+
     try {
       console.log('Iniciando carga de viajes...');
       const data = await tripsApi.getAllComplete();
@@ -169,8 +169,8 @@ const TripsPage: React.FC = () => {
 
   // Validar que la fecha "hasta" sea mayor o igual que "desde"
   const fechaValida = !fechaDesde || !fechaHasta || new Date(fechaDesde) <= new Date(fechaHasta);
-  const mensajeError = fechaDesde && fechaHasta && !fechaValida 
-    ? 'La fecha "Hasta" debe ser mayor o igual que la fecha "Desde"' 
+  const mensajeError = fechaDesde && fechaHasta && !fechaValida
+    ? 'La fecha "Hasta" debe ser mayor o igual que la fecha "Desde"'
     : '';
 
   const handleImportSuccess = (importedTrips: Trip[]) => {
@@ -209,16 +209,14 @@ const TripsPage: React.FC = () => {
           >
             Importar CSV
           </button>
-          
+
           <button
             onClick={fetchTrips}
             disabled={loading}
             className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
           >
             {loading ? (
-              <div className="flex items-center justify-center">
-                <SpinnerWithText size="sm" text="Actualizando..." />
-              </div>
+              'Actualizando...'
             ) : 'Actualizar Datos'}
           </button>
         </div>
@@ -238,7 +236,7 @@ const TripsPage: React.FC = () => {
               {generarOpcionesDecenas().map(decena => {
                 const decenaNum = decena.charAt(0);
                 const nombreMesAño = getNombreMesDecena(decena);
-                
+
                 return (
                   <option key={decena} value={decena}>
                     {decenaNum}ª Decena {nombreMesAño}
@@ -248,8 +246,8 @@ const TripsPage: React.FC = () => {
             </select>
           </div>
           <div className="text-sm text-gray-600 mb-3">
-            <strong>Período seleccionado:</strong> {fechaDesde && fechaHasta ? 
-              `${new Date(fechaDesde).toLocaleDateString()} - ${new Date(fechaHasta).toLocaleDateString()}` : 
+            <strong>Período seleccionado:</strong> {fechaDesde && fechaHasta ?
+              `${new Date(fechaDesde).toLocaleDateString()} - ${new Date(fechaHasta).toLocaleDateString()}` :
               'No seleccionado'
             }
           </div>
@@ -262,9 +260,8 @@ const TripsPage: React.FC = () => {
                 type="date"
                 value={fechaDesde}
                 onChange={(e) => setFechaDesde(e.target.value)}
-                className={`border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  !fechaValida ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${!fechaValida ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 max={fechaHasta || undefined}
               />
             </div>
@@ -276,9 +273,8 @@ const TripsPage: React.FC = () => {
                 type="date"
                 value={fechaHasta}
                 onChange={(e) => setFechaHasta(e.target.value)}
-                className={`border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  !fechaValida ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${!fechaValida ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 min={fechaDesde || undefined}
               />
             </div>
@@ -330,14 +326,14 @@ const TripsPage: React.FC = () => {
               </svg>
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {!fechaValida ? 'Rango de fechas inválido' : 
-               trips.length > 0 ? 'No hay viajes en el rango de fechas seleccionado' : 'No hay viajes registrados'}
+              {!fechaValida ? 'Rango de fechas inválido' :
+                trips.length > 0 ? 'No hay viajes en el rango de fechas seleccionado' : 'No hay viajes registrados'}
             </h3>
             <p className="text-gray-500 mb-4">
               {!fechaValida ? 'Corrige el rango de fechas seleccionado.' :
-               trips.length > 0 
-                ? 'Ajusta los filtros de fecha o importa más datos.'
-                : 'Importa un archivo CSV para comenzar a gestionar los viajes.'
+                trips.length > 0
+                  ? 'Ajusta los filtros de fecha o importa más datos.'
+                  : 'Importa un archivo CSV para comenzar a gestionar los viajes.'
               }
             </p>
             <button

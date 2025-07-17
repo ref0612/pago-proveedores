@@ -133,8 +133,8 @@ const Configuracion = () => {
                 key={tab.key}
                 className={`px-6 py-4 text-xs font-medium flex items-center transition-colors duration-200 ${
                   activeTab === tab.key
-                    ? 'border-b-2 border-blue-500 text-blue-600'
-                    : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-b-2 border-[#01236A] text-[#01236A]'
+                    : 'text-gray-500 hover:text-[#01236A] hover:border-[#01236A] hover:bg-gray-50'
                 }`}
                 onClick={() => handleTabChange(tab.key)}
                 type="button"

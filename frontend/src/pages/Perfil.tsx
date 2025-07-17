@@ -137,17 +137,16 @@ export default function Perfil() {
                 <h2 className="text-xl font-semibold text-gray-800">{user.nombre}</h2>
                 <button
                   onClick={startEditingName}
-                  className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
+                  className="text-gray-600 hover:text-[#01236A] text-sm flex items-center gap-1"
                 >
                   <Edit className="w-4 h-4" />
-                  Editar
                 </button>
               </>
             ) : (
               <form onSubmit={handleUpdateName} className="flex items-center gap-2">
                 <input
                   type="text"
-                  className="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  className="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#01236A]"
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
                   placeholder="Ingresa tu nombre completo"
@@ -181,14 +180,14 @@ export default function Perfil() {
       {/* Tabs */}
       <div className="flex border-b border-gray-200 mb-6">
         <button
-          className={`px-4 py-2 -mb-px border-b-2 transition-colors text-sm font-medium focus:outline-none flex items-center gap-2 ${tab === 'datos' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-blue-600'}`}
+          className={`px-4 py-2 -mb-px border-b-2 transition-colors text-sm font-medium focus:outline-none flex items-center gap-2 ${tab === 'datos' ? 'border-[#01236A] text-[#01236A]' : 'border-transparent text-gray-500 hover:text-[#01236A]'}`}
           onClick={() => setTab('datos')}
         >
           <User className="w-4 h-4" />
           <span>Datos personales</span>
         </button>
         <button
-          className={`ml-2 px-4 py-2 -mb-px border-b-2 transition-colors text-sm font-medium focus:outline-none flex items-center gap-2 ${tab === 'seguridad' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-blue-600'}`}
+          className={`ml-2 px-4 py-2 -mb-px border-b-2 transition-colors text-sm font-medium focus:outline-none flex items-center gap-2 ${tab === 'seguridad' ? 'border-[#01236A] text-[#01236A]' : 'border-transparent text-gray-500 hover:text-[#01236A]'}`}
           onClick={() => setTab('seguridad')}
         >
           <Shield className="w-4 h-4" />

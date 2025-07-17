@@ -32,6 +32,15 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
     onClose();
   };
 
+  const getInitials = (nombre: string) => {
+    if (!nombre) return '';
+    const partes = nombre.trim().split(' ');
+    if (partes.length === 1) {
+      return partes[0][0].toUpperCase();
+    }
+    return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+  };
+
   const handleNavigation = (path: string) => {
     navigate(path);
     onClose();
@@ -57,7 +66,7 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
   return (
     <div
       className={`
-        fixed top-0 left-0 h-full rounded-e-xl bg-white shadow-xl transition-all duration-300 ease-in-out z-50
+        fixed top-0 left-0 h-full rounded-br-3xl shadow-md transition-all duration-300 ease-in-out z-50
         ${isOpen ? 'w-72' : 'w-0'}
         ${isHovered ? 'lg:w-72' : 'lg:w-0'}
         overflow-hidden
@@ -72,38 +81,54 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
       {/* Sidebar content */}
       <div className={`h-full flex flex-col w-72 ${!isOpen && !isHovered ? 'opacity-0' : 'opacity-100'}`}>
         {/* Header del sidebar */}
-        <div className="flex items-center justify-between p-[17.5px] text-black border-b border-gray-200 mb-6">
-          <h1 className={`text-xl font-bold ${!isHovered && 'lg:hidden'}`}>Pullman</h1>
+        <div className="flex items-center justify-between p-3 text-black bg-[#F7F8FE]">
+          <div className={`flex items-center ${!isOpen && !isHovered ? 'lg:justify-center' : 'justify-start'} w-full`}>
+            {isOpen || isHovered ? (
+              <img 
+                src="/Pullman_Bus.png" 
+                alt="Pullman Bus" 
+                className="my-1 h-8 object-contain"
+              />
+            ) : (
+              <div className="lg:flex items-center justify-center w-full">
+                <img 
+                  src="/Pullman_Bus.png"
+                  alt="Pullman"
+                  className="h-8 object-contain hidden lg:block"
+                />
+              </div>
+            )}
+          </div>
           <button
             onClick={onClose}
-            className="lg:hidden p-2 rounded-md hover:bg-blue-500 transition-colors"
+            className="lg:hidden p-2 rounded-md hover:bg-gray-100 transition-colors text-gray-600"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Navegación */}
-        <nav className="flex-1 p-1 overflow-y-auto">
-          <div className="space-y-1">
+        <nav className="flex-1 p-1 overflow-y-auto bg-[#F7F8FE]">
+          <div className="space-y-1 mt-6">
             {modules.filter((m) => m.show).map(({ path, label, icon: Icon }) => {
               const active = routerLocation.pathname.startsWith(path);
               return (
                 <button
                   key={path}
                   onClick={() => handleNavigation(path)}
-                  className={`w-full text-left px-3 py-3 text-sm rounded-lg flex items-center group transition-all duration-100 font-medium
+                  className={`w-full text-left px-3 py-4 text-sm rounded-lg flex items-center group transition-all duration-100 font-medium
                     ${active ? 'bg-blue-50 text-[#01236A] border-r-4 border-[#01236A] shadow-sm' : 'text-gray-500 hover:bg-gray-100'}
                   `}
                 >
                   <Icon className={`w-5 h-5 mr-2 ${active ? 'text-[#01236A]' : 'text-gray-400 group-hover:text-[#01236A]'} transition-colors`} />
-                  <span className={`flex-1 text-left ${active ? 'text-[#01236A]' : 'text-gray-400 group-hover:text-[#01236A]'}`}>{label}</span>
+                  <span className={`flex-1 text-left ${active ? 'text-[#01236A]' : 'text-gray-500 group-hover:text-[#01236A]'}`}>{label}</span>
                   {active && <span className="ml-2 w-2 h-2 rounded-full bg-[#01236A]"></span>}
                 </button>
               );
             })}
           </div>
         </nav>
-        <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
+        <div className="flex-shrink-0 flex border-t border-gray-200 p-4 bg-[#01236A] opacity-90">
           <div className="flex items-center w-full">
             <div className="flex-shrink-0">
               <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
@@ -111,10 +136,10 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
               </div>
             </div>
             <div className="ml-3 flex-1 min-w-0">
-              <p className="text-xs font-medium text-gray-900 truncate">
+              <p className="text-xs font-medium text-white truncate">
                 Sistema de Liquidación v1.0.1
               </p>
-              <p className="text-xs text-gray-500 truncate">
+              <p className="text-xs text-white truncate">
                 © {new Date().getFullYear()} Pullman Bus
               </p>
             </div>

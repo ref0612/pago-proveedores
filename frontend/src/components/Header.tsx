@@ -98,8 +98,8 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
   const breathingAnimation = `animate-breathing`;
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-      <div className="flex items-center justify-between px-6 py-2 min-h-[63px]">
+    <header className="bg-[#F7F8FE] shadow-sm border-b sticky top-0 z-50">
+      <div className="flex items-center justify-between px-6 py-2 min-h-[64px]">
         <div className="flex items-center">
           <button
             onClick={onToggleSidebar}
@@ -160,10 +160,10 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
                   </div>
                   <div className="border-t border-gray-100 my-2" />
                   <button
-                    className="w-full text-sm text-left px-4 py-2 text-gray-700 hover:bg-cyan-50 flex items-center gap-2 text-sm transition-colors duration-200"
+                    className="w-full text-sm text-left px-4 py-2 text-gray-700 hover:bg-gray-50 flex items-center gap-2 text-sm transition-colors duration-200"
                     onClick={() => { setShowUserMenu(false); navigate('/perfil'); }}
                   >
-                    <User className="w-4 h-4 text-cyan-600" /> Perfil
+                    <User className="w-4 h-4 text-[#01236A]" /> Perfil
                   </button>
                   <div className="border-t border-gray-100 my-1" />
                   <button
