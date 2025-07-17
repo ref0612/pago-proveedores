@@ -125,7 +125,7 @@ export default function Perfil() {
   return (
     <div className="max-w-xl mx-auto p-8 bg-white rounded-lg shadow mt-8">
       <div className="flex items-center gap-4 mb-6">
-        <div className="w-20 h-20 bg-cyan-600 rounded-full flex items-center justify-center">
+        <div className="w-20 h-20 bg-[#01236A] rounded-full flex items-center justify-center">
           <span className="text-white font-bold text-xl select-none">
             {getInitials(user.nombre)}
           </span>

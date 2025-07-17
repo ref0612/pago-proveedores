@@ -140,7 +140,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
             
             <div className="flex items-center space-x-2 relative" ref={userMenuRef}>
               <button
-                className="w-10 h-10 bg-cyan-600 rounded-full flex items-center justify-center focus:outline-none  shadow-sm hover:scale-105 transition-transform duration-200"
+                className="w-10 h-10 bg-[#01236A] rounded-full flex items-center justify-center focus:outline-none  shadow-sm hover:scale-105 transition-transform duration-200"
                 onClick={() => setShowUserMenu((v) => !v)}
                 aria-label="Abrir menú de usuario"
               >
@@ -152,7 +152,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
                 <div className="absolute right-[-10px] top-11 mt-0 w-72 bg-white border border-gray-200 rounded-xl shadow-2xl z-50 animate-fadein py-2">
                   {/* Bloque de usuario */}
                   <div className="flex flex-col items-center px-4 pt-4 pb-2">
-                    <div className="w-14 h-14 bg-cyan-600 rounded-full flex items-center justify-center mb-2 shadow">
+                    <div className="w-14 h-14 bg-[#01236A] rounded-full flex items-center justify-center mb-2 shadow">
                       <span className="text-white font-bold text-xl select-none">{getInitials(user.nombre)}</span>
                     </div>
                     <div className="text-base font-semibold text-gray-800 text-center w-full truncate">{user.nombre}</div>

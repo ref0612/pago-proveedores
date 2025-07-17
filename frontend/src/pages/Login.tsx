@@ -8,6 +8,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [showError, setShowError] = useState(false);
   const [loading, setLoading] = useState(false);
   const { user, login, initializeUsers } = useAuth();
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setShowError(false);
     setLoading(true);
 
     try {
@@ -31,6 +33,7 @@ export default function Login() {
         }, 0);
       } else {
         setError('Credenciales inválidas. Verifica tu email y contraseña.');
+        setShowError(true);
       }
     } catch (error) {
       setError('Error de conexión. Verifica que el servidor esté funcionando.');
@@ -111,10 +114,13 @@ export default function Login() {
                         name="email"
                         type="email"
                         required
-                        className="block w-full pl-10 pr-3 py-2 text-[#01236A] border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-[#01236A] focus:border-[#01236A] sm:text-sm"
+                        className={`block w-full pl-10 pr-3 py-2 text-[#01236A] border ${showError ? 'border-red-500' : 'border-gray-300'} rounded-lg shadow-sm focus:outline-none focus:ring-1 ${showError ? 'focus:ring-red-500 focus:border-red-500' : 'focus:ring-[#01236A] focus:border-[#01236A]'} sm:text-sm`}
                         placeholder="usuario@pullman.com"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+                          if (showError) setShowError(false);
+                        }}
                       />
                     </div>
                   </div>
@@ -140,10 +146,13 @@ export default function Login() {
                           name="password"
                           type={showPassword ? "text" : "password"}
                           required
-                          className="block w-full pl-10 pr-10 py-2 text-[#01236A] border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-[#01236A] focus:border-[#01236A] sm:text-sm"
+                          className={`block w-full pl-10 pr-10 py-2 text-[#01236A] border ${showError ? 'border-red-500' : 'border-gray-300'} rounded-lg shadow-sm focus:outline-none focus:ring-1 ${showError ? 'focus:ring-red-500 focus:border-red-500' : 'focus:ring-[#01236A] focus:border-[#01236A]'} sm:text-sm`}
                           placeholder="••••••••"
                           value={password}
-                          onChange={(e) => setPassword(e.target.value)}
+                          onChange={(e) => {
+                            setPassword(e.target.value);
+                            if (showError) setShowError(false);
+                          }}
                         />
                         {password && (
                           <button
@@ -170,15 +179,15 @@ export default function Login() {
                 </div>
 
                 {error && (
-                  <div className="bg-red-50 border-l-4 border-red-500 p-4">
+                  <div className="mx-8 !mt-2">
                     <div className="flex">
                       <div className="flex-shrink-0">
-                        <svg className="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <svg className="h-4 w-4 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                         </svg>
                       </div>
-                      <div className="ml-3">
-                        <p className="text-sm text-red-700">{error}</p>
+                      <div className="ml-1">
+                        <p className="text-xs text-red-700">{error}</p>
                       </div>
                     </div>
                   </div>

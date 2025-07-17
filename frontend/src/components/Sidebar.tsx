@@ -96,7 +96,7 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
                   `}
                 >
                   <Icon className={`w-5 h-5 mr-2 ${active ? 'text-[#01236A]' : 'text-gray-400 group-hover:text-[#01236A]'} transition-colors`} />
-                  <span className="flex-1 text-left">{label}</span>
+                  <span className={`flex-1 text-left ${active ? 'text-[#01236A]' : 'text-gray-400 group-hover:text-[#01236A]'}`}>{label}</span>
                   {active && <span className="ml-2 w-2 h-2 rounded-full bg-[#01236A]"></span>}
                 </button>
               );
