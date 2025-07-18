@@ -198,7 +198,7 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full flex justify-center items-center py-2.5 px-4 border rounded-lg shadow-sm text-sm font-medium text-white bg-[#01236A] hover:bg-[#01236A]/80 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                    className="w-full flex justify-center items-center py-2.5 px-4 border rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-[#ED4717] via-[#920468] to-[#01236A] hover:bg-[#01236A]/80 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                   >
                     {loading ? (
                       <>

@@ -17,8 +17,8 @@ interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   isHovered: boolean;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }
 
 export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMouseLeave }: SidebarProps) {
@@ -58,9 +58,7 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
     { path: '/validacion', label: 'Validación Operacional', icon: CheckCircle, show: user.canViewValidacion },
     { path: '/liquidacion', label: 'Liquidación y Pagos', icon: CreditCard, show: user.canViewLiquidacion },
     { path: '/reportes', label: 'Reportes', icon: BarChart3, show: user.canViewReportes },
-    { path: '/configuracion', label: 'Configuración', icon: Settings, show: user.rol === 'ADMIN'},
-    { path: '/recorridos', label: 'Zonas', icon: Building2, show: user.rol === 'ADMIN'},
-    { path: '/privileges', label: 'Privilegios', icon: Settings, show: user.rol === 'ADMIN'},
+    { path: '/configuracion', label: 'Configuración', icon: Settings, show: user.rol === 'ADMIN' },
   ];
 
   return (
@@ -73,7 +71,7 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
       `}
       onMouseEnter={onMouseEnter}
       onMouseLeave={() => {
-        onMouseLeave();
+        onMouseLeave?.();
         if (isOpen) onClose();
       }}
       onClick={(e) => e.stopPropagation()}
@@ -81,17 +79,17 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
       {/* Sidebar content */}
       <div className={`h-full flex flex-col w-72 ${!isOpen && !isHovered ? 'opacity-0' : 'opacity-100'}`}>
         {/* Header del sidebar */}
-        <div className="flex items-center justify-between p-3 text-black bg-[#F7F8FE] border-b border-gray-200">
+        <div className="flex items-center justify-between p-3 text-black">
           <div className={`flex items-center ${!isOpen && !isHovered ? 'lg:justify-center' : 'justify-start'} w-full`}>
             {isOpen || isHovered ? (
-              <img 
-                src="/Pullman_Bus.png" 
-                alt="Pullman Bus" 
+              <img
+                src="/Pullman_Bus.png"
+                alt="Pullman Bus"
                 className="my-1 h-8 object-contain"
               />
             ) : (
               <div className="lg:flex items-center justify-center w-full">
-                <img 
+                <img
                   src="/Pullman_Bus.png"
                   alt="Pullman"
                   className="h-8 object-contain hidden lg:block"
@@ -108,8 +106,9 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
         </div>
 
         {/* Navegación */}
-        <nav className="flex-1 p-1 overflow-y-auto bg-[#F7F8FE]">
-          <div className="space-y-1">
+        <nav className="flex-1 p-1 overflow-y-auto">
+
+          <div className="space-y-2 my-4">
             {modules.filter((m) => m.show).map(({ path, label, icon: Icon }) => {
               const active = routerLocation.pathname.startsWith(path);
               return (
@@ -117,7 +116,7 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
                   key={path}
                   onClick={() => handleNavigation(path)}
                   className={`w-full text-left px-3 py-4 text-sm rounded-lg flex items-center group transition-all duration-100 font-medium
-                    ${active ? 'bg-blue-50 text-[#01236A] border-r-4 border-[#01236A] shadow-sm' : 'text-gray-500 hover:bg-gray-100'}
+                  ${active ? 'bg-gradient-to-r from-[#ED4717]/10 via-[#920468]/10 to-[#01236A]/10 text-[#01236A] border-r-4 border-[#01236A] shadow-sm' : 'text-gray-500 hover:bg-gray-200/60'}
                   `}
                 >
                   <Icon className={`w-5 h-5 mr-2 ${active ? 'text-[#01236A]' : 'text-gray-400 group-hover:text-[#01236A]'} transition-colors`} />
@@ -128,7 +127,7 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
             })}
           </div>
         </nav>
-        <div className="flex-shrink-0 flex border-t border-gray-200 p-4 bg-[#01236A] opacity-90">
+        <div className="flex-shrink-0 flex border-t border-gray-200 p-4 bg-gradient-to-r from-[#ED4717] via-[#920468] to-[#01236A]">
           <div className="flex items-center w-full">
             <div className="flex-shrink-0">
               <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
@@ -136,7 +135,7 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
               </div>
             </div>
             <div className="ml-3 flex-1 min-w-0">
-              <p className="text-xs font-medium text-white truncate">
+              <p className="text-xs font-medium text-white truncate ">
                 Sistema de Liquidación v1.0.1
               </p>
               <p className="text-xs text-white truncate">

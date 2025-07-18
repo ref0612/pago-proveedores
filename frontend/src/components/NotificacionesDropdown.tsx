@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from 'react';
 import { apiDelete, apiGet, apiPut } from '../services/api';
 import { useAuth, useNotificaciones } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCircle, FileCheck2, FileText, RefreshCcw, XCircle, MoreVertical, CheckCircle as CheckIcon, Loader2 } from 'lucide-react';
+import { Bell, CheckCircle, FileCheck2, FileText, RefreshCcw, XCircle, MoreVertical, CheckCircle as CheckIcon, Loader2, XCircleIcon } from 'lucide-react';
 import { SpinnerWithText } from './ui/Spinner';
 
 interface Notificacion {
@@ -256,7 +256,7 @@ export default function NotificacionesDropdown({ onClose, onNoLeidasChange, onCa
           {notificacionesFiltradas.map((n) => (
             <li
               key={n.id}
-              className={`group flex items-start gap-2 p-3 border-b border-gray-200 shadow-sm transition-all duration-200 cursor-pointer ${n.leida ? 'bg-gray-50 border-gray-100' : 'bg-blue-50 border-blue-200 hover:bg-blue-100'}`}
+              className={`group flex items-start gap-2 p-3 border-b border-gray-200 shadow-sm transition-all duration-200 cursor-pointer ${n.leida ? 'bg-gray-100/70 border-gray-200' : 'bg-white border-blue-200 hover:bg-blue-50/50'}`}
               onClick={() => handleNotificacionClick(n)}
               title={n.tipo}
             >
@@ -271,7 +271,7 @@ export default function NotificacionesDropdown({ onClose, onNoLeidasChange, onCa
                     className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity ml-2"
                     title="Marcar como leída y ocultar"
                   >
-                    <XCircle className="w-4 h-4" />
+                    <XCircleIcon className="w-4 h-4" />
                   </button>
                 </div>
                 <div className="flex justify-between items-end">

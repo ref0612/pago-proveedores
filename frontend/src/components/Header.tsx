@@ -98,8 +98,9 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
   const breathingAnimation = `animate-breathing`;
 
   return (
-    <header className="bg-[#F7F8FE] shadow-sm border-b sticky top-0 z-50">
-      <div className="flex items-center justify-between px-6 py-2 min-h-[64px]">
+    <header className="bg-[#F7F8FE] shadow-sm rounded-bl-3xl rounded-br-3xl border-b-2 sticky top-0 z-50 relative">
+      <div className="absolute inset-0 rounded-bl-3xl rounded-br-3xl p-[3px] bg-white -z-10"></div>
+      <div className="flex items-center justify-between px-6 min-h-[64px]">
         <div className="flex items-center">
           <button
             onClick={onToggleSidebar}
@@ -109,7 +110,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
             <Menu className="w-6 h-6" />
           </button>
           <h1 className="text-xl font-semibold text-gray-800 hidden md:block">
-            {getPageTitle()}
+           <img src="pullman-bus-logo.png" className="w-64 h-13" alt="Pullman_Logo" />
           </h1>
         </div>
         
@@ -123,11 +124,11 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
               <Bell className="h-7 w-7" />
               {/* Badge con contador de notificaciones no leídas */}
               {tieneNoLeidas ? (
-                <span className="absolute -top-1 -right-0.5 bg-red-500 text-white text-xs rounded-full h-5 min-w-5 flex items-center justify-center">
+                <span className="absolute -top-0.5 -right-0 bg-red-500 text-white text-xs rounded-full h-4 min-w-4 flex items-center justify-center">
                   {cantidadNoLeidas > 9 ? '9+' : cantidadNoLeidas}
                 </span>
               ) : (
-                <span className="absolute top-0 right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></span>
+                <span className="absolute -top-0.5 -right-0 w-4 h-4 bg-green-500 rounded-full"></span>
               )}
             </button>
             {showNotificaciones && (

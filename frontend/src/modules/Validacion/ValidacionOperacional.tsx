@@ -218,23 +218,7 @@ export default function ValidacionOperacional() {
             </div>
             {user && (
               <div className="flex items-center gap-3 bg-white p-3 rounded-lg shadow-sm border">
-                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                  <span className="text-blue-600 font-medium">
-                    {user.nombre.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
-                  </span>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">{user.nombre}</p>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500">{user.rol}</span>
-                    {canEditValidated() && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Editor
-                      </span>
-                    )}
-                  </div>
-
-                </div>
+                
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <p className="text-xs font-medium text-gray-500 mb-1">Ganancia total</p>
                   <p className="text-xl font-bold text-green-600">${gananciaTotal.toLocaleString()}</p>

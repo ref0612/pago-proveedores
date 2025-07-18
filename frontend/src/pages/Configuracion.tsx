@@ -5,8 +5,8 @@ import { apiGet } from '../services/api';
 import { AlertContext } from '../App';
 import { useContext } from 'react';
 import UserEditModal from '../components/UserEditModal';
-import ZonasConfig from '../components/configuracion/ZonasConfig';
-
+import RegistroRecorridos from '../modules/Recorridos/RegistroRecorridos';
+import Privileges from './Privileges';
 
 interface Usuario {
   id: number;
@@ -149,7 +149,17 @@ const Configuracion = () => {
         {/* Tab Content */}
         <div className="bg-white rounded-b-lg shadow-lg p-6">
           {activeTab === 'zonas' ? (
-            <ZonasConfig />
+            <RegistroRecorridos />
+          ) : activeTab === 'permisos' ? (
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-800">Matriz de Permisos</h3>
+                  <p className="text-gray-500 text-sm">Administra los permisos para cada rol en el sistema</p>
+                </div>
+              </div>
+              <Privileges />
+            </div>
           ) : activeTab === 'usuarios' ? (
             <>
               <div className="flex items-center justify-between mb-6">
