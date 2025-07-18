@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { apiGet } from '../services/api';
 
 export interface Reporte {
   decena: string;
@@ -44,6 +45,116 @@ export function useReportesApi() {
     loading,
     error,
   };
+}
+
+export function useReporteGlobalSummary() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchSummary = async (desde: string, hasta: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await apiGet(`/reports/global-summary?desde=${desde}&hasta=${hasta}`);
+      setData(res);
+    } catch (e: any) {
+      setError(e.message || 'Error al cargar el resumen global');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { data, loading, error, fetchSummary };
+}
+
+export function useReporteEmpresarioDetallado() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchEmpresario = async (empresarioId: number, desde: string, hasta: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await apiGet(`/reports/empresario-detallado?empresarioId=${empresarioId}&desde=${desde}&hasta=${hasta}`);
+      setData(res);
+    } catch (e: any) {
+      setError(e.message || 'Error al cargar el reporte detallado');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { data, loading, error, fetchEmpresario };
+}
+
+export function useReporteZonaDetallada() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchZona = async (zona: string, desde: string, hasta: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await apiGet(`/reports/zona-detallada?zona=${encodeURIComponent(zona)}&desde=${desde}&hasta=${hasta}`);
+      setData(res);
+    } catch (e: any) {
+      setError(e.message || 'Error al cargar el reporte de zona');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { data, loading, error, fetchZona };
+}
+
+export function useReporteProduccionLiquidaciones() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchProduccion = async (empresarioId: number | null, desde: string, hasta: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      let url = `/reports/produccion-liquidaciones?desde=${desde}&hasta=${hasta}`;
+      if (empresarioId) url += `&empresarioId=${empresarioId}`;
+      const res = await apiGet(url);
+      setData(res);
+    } catch (e: any) {
+      setError(e.message || 'Error al cargar el reporte de producción/liquidaciones');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { data, loading, error, fetchProduccion };
+}
+
+export function useReporteValidacionesAprobaciones() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchValidaciones = async (empresarioId: number | null, zona: string, desde: string, hasta: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      let url = `/reports/validaciones-aprobaciones?desde=${desde}&hasta=${hasta}`;
+      if (empresarioId) url += `&empresarioId=${empresarioId}`;
+      if (zona) url += `&zona=${encodeURIComponent(zona)}`;
+      const res = await apiGet(url);
+      setData(res);
+    } catch (e: any) {
+      setError(e.message || 'Error al cargar el reporte de validaciones/aprobaciones');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { data, loading, error, fetchValidaciones };
 }
 
 /**

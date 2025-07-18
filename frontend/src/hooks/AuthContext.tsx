@@ -58,6 +58,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data.success) {
         setUser(data.user);
         localStorage.setItem('currentUser', JSON.stringify(data.user));
+        if (data.token) {
+          localStorage.setItem('authToken', data.token);
+        }
         return true;
       } else {
         return false;
@@ -71,6 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setUser(null);
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('authToken');
   };
 
   const initializeUsers = async (): Promise<boolean> => {

@@ -3,6 +3,7 @@ package com.pullman.controller;
 import com.pullman.domain.User;
 import com.pullman.service.UserService;
 import com.pullman.service.AuthorizationService;
+import com.pullman.config.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +23,9 @@ public class UserController {
     @Autowired
     private AuthorizationService authorizationService;
     
+    @Autowired
+    private JwtUtil jwtUtil;
+    
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
         String email = credentials.get("email");
@@ -32,11 +36,12 @@ public class UserController {
         if (user != null) {
             // Obtener privilegios del usuario
             List<String> userPrivileges = authorizationService.getUserPrivileges(user);
-            
+            String token = jwtUtil.generateToken(user.getEmail(), user.getRol().name());
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("user", user);
             response.put("privileges", userPrivileges);
+            response.put("token", token);
             response.put("message", "Login exitoso");
             return ResponseEntity.ok(response);
         } else {

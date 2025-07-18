@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface RouteRepository extends JpaRepository<Route, Long> {
     List<Route> findByZonaId(Long zonaId);
+    List<Route> findByOrigenAndDestino(String origen, String destino);
 } 

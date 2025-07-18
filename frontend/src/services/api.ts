@@ -6,26 +6,20 @@ const getAuthHeaders = () => {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  
-  // Temporalmente comentado para probar sin autenticación
-  // const token = localStorage.getItem('authToken');
-  // if (token) {
-  //   headers['Authorization'] = `Bearer ${token}`;
-  // }
-  
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
   return headers;
 };
 
 // Función para obtener las credenciales para archivos (sin Content-Type)
 const getFileAuthHeaders = () => {
   const headers: Record<string, string> = {};
-  
-  // Temporalmente comentado para probar sin autenticación
-  // const token = localStorage.getItem('authToken');
-  // if (token) {
-  //   headers['Authorization'] = `Bearer ${token}`;
-  // }
-  
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
   return headers;
 };
 
@@ -179,4 +173,17 @@ export const liquidationsApi = {
   getById: (id: number) => apiGet(`/liquidations/${id}`),
   registrarPago: (id: number) => apiPost(`/liquidations/${id}/registrar-pago`),
   aprobar: (id: number) => apiPost(`/liquidations/${id}/aprobar`),
+};
+
+// Funciones para obtener empresarios y zonas
+export const getAllEntrepreneurs = async () => {
+  // Traer todos los empresarios (size grande para evitar paginación)
+  const res = await apiGet('/entrepreneurs?page=0&size=1000');
+  return res.content || res;
+};
+
+export const getAllZones = async () => {
+  // Traer todas las zonas (size grande para evitar paginación)
+  const res = await apiGet('/zones?page=0&size=1000');
+  return res.content || res;
 };

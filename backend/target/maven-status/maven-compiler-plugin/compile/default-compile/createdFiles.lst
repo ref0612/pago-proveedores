@@ -4,6 +4,7 @@ com\pullman\repository\PaymentRepository.class
 com\pullman\service\AuditLogService.class
 com\pullman\domain\Route.class
 com\pullman\repository\ProductionRepository.class
+com\pullman\controller\ReportController.class
 com\pullman\controller\UserController.class
 com\pullman\service\AuthorizationService.class
 com\pullman\service\ProductionService.class
@@ -30,6 +31,7 @@ com\pullman\controller\LiquidationDto.class
 com\pullman\repository\TripRepository.class
 com\pullman\controller\TripController.class
 com\pullman\repository\NotificacionRepository.class
+com\pullman\config\JwtAuthFilter.class
 com\pullman\repository\EntrepreneurRepository.class
 com\pullman\controller\PrivilegeController.class
 com\pullman\domain\User$Role.class
@@ -51,3 +53,4 @@ com\pullman\service\PrivilegeService.class
 com\pullman\domain\Trip.class
 com\pullman\service\LiquidationService.class
 com\pullman\controller\PaymentController.class
+com\pullman\config\JwtUtil.class

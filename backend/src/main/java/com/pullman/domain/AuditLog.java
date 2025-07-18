@@ -24,4 +24,12 @@ public class AuditLog {
     public void setId(Long id) {
         this.id = id;
     }
+
+    public Long getId() { return id; }
+    public User getUser() { return user; }
+    public String getAccion() { return accion; }
+    public String getEntidad() { return entidad; }
+    public Long getEntidadId() { return entidadId; }
+    public LocalDateTime getFecha() { return fecha; }
+    public String getDetalle() { return detalle; }
 } 
