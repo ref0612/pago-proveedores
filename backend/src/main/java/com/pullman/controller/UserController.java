@@ -86,8 +86,33 @@ public class UserController {
     public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User user) {
         return userService.findById(id)
                 .map(existing -> {
-                    user.setId(id);
-                    User updatedUser = userService.save(user);
+                    // Actualizar solo los campos que vienen en la solicitud
+                    if (user.getNombre() != null) {
+                        existing.setNombre(user.getNombre());
+                    }
+                    if (user.getEmail() != null) {
+                        existing.setEmail(user.getEmail());
+                    }
+                    // No actualizar la contraseña a menos que se envíe explícitamente
+                    if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+                        existing.setPassword(user.getPassword());
+                    }
+                    if (user.getRol() != null) {
+                        existing.setRol(user.getRol());
+                    }
+                    // Actualizar el estado activo/inactivo
+                    existing.setActivo(user.isActivo());
+                    // Actualizar los permisos
+                    existing.setCanViewTrips(user.isCanViewTrips());
+                    existing.setCanViewRecorridos(user.isCanViewRecorridos());
+                    existing.setCanViewProduccion(user.isCanViewProduccion());
+                    existing.setCanViewValidacion(user.isCanViewValidacion());
+                    existing.setCanViewLiquidacion(user.isCanViewLiquidacion());
+                    existing.setCanViewReportes(user.isCanViewReportes());
+                    existing.setCanViewUsuarios(user.isCanViewUsuarios());
+
+                    User updatedUser = userService.save(existing);
+                    
                     // Crear un mapa con solo los datos necesarios del usuario (sin password)
                     Map<String, Object> userData = new HashMap<>();
                     userData.put("id", updatedUser.getId());
@@ -102,6 +127,7 @@ public class UserController {
                     userData.put("canViewLiquidacion", updatedUser.isCanViewLiquidacion());
                     userData.put("canViewReportes", updatedUser.isCanViewReportes());
                     userData.put("canViewUsuarios", updatedUser.isCanViewUsuarios());
+                    
                     Map<String, Object> response = new HashMap<>();
                     response.put("message", "Usuario actualizado correctamente");
                     response.put("user", userData);
@@ -123,6 +149,22 @@ public class UserController {
         } else {
             return ResponseEntity.badRequest().body(Map.of("error", "La contraseña actual es incorrecta"));
         }
+    }
+    
+    @PostMapping("/{id}/reset-password")
+    public ResponseEntity<?> resetPassword(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+        String newPassword = payload.get("newPassword");
+        if (newPassword == null || newPassword.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "La nueva contraseña no puede estar vacía"));
+        }
+        
+        return userService.findById(id)
+                .map(user -> {
+                    user.setPassword(newPassword); // The service should handle password encoding
+                    userService.save(user);
+                    return ResponseEntity.ok(Map.of("message", "Contraseña restablecida correctamente"));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
     
     @PutMapping("/{id}/nombre")

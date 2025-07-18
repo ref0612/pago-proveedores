@@ -110,7 +110,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
             <Menu className="w-6 h-6" />
           </button>
           <h1 className="text-xl font-semibold text-gray-800 hidden md:block">
-           <img src="pullman-bus-logo.png" className="w-64 h-13" alt="Pullman_Logo" />
+           <img src="pullman-bus-logo.png" onClick={() => navigate('/dashboard')} className="w-64 h-13 cursor-pointer" alt="Pullman_Logo" />
           </h1>
         </div>
         

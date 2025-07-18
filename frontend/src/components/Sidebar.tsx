@@ -106,7 +106,7 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
         </div>
 
         {/* Navegación */}
-        <nav className="flex-1 p-1 overflow-y-auto">
+        <nav className="flex-1 p-4 overflow-y-auto bg-white">
 
           <div className="space-y-2 my-4">
             {modules.filter((m) => m.show).map(({ path, label, icon: Icon }) => {
@@ -127,7 +127,7 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
             })}
           </div>
         </nav>
-        <div className="flex-shrink-0 flex border-t border-gray-200 p-4 bg-gradient-to-r from-[#ED4717] via-[#920468] to-[#01236A]">
+        <div className="flex-shrink-0 flex border-t border-gray-200 p-4 bg-gradient-to-r from-[#ED4717]/90 via-[#920468]/90 to-[#01236A]/90">
           <div className="flex items-center w-full">
             <div className="flex-shrink-0">
               <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">

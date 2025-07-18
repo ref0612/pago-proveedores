@@ -42,7 +42,7 @@ export default function Layout({ children }: LayoutProps) {
         {/* Sidebar */}
         <div 
           className={`fixed top-16 left-0 bottom-0 z-40 transition-all duration-300 ease-in-out ${
-            sidebarOpen ? 'w-72' : 'w-0 md:w-20'
+            sidebarOpen ? 'w-72' : 'w-0 md:w-1'
           }`}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
@@ -57,10 +57,10 @@ export default function Layout({ children }: LayoutProps) {
         {/* Main Content */}
         <div 
           className={`flex-1 overflow-auto transition-all duration-300 ease-in-out h-full ${
-            (isHovered || sidebarOpen) ? 'md:ml-72' : 'md:ml-20'
+            (isHovered || sidebarOpen) ? 'md:ml-72' : 'md:ml-1'
           }`}
         >
-          <main className="p-4 lg:p-6">
+          <main className="p-0 lg:p-0">
             {children}
           </main>
         </div>
