@@ -58,14 +58,7 @@ export default function ReportesGenerales() {
   // Handlers
   const handleBuscarResumen = () => fetchSummary(desde, hasta);
   const handleBuscarEmpresario = () => {
-    if (empresarioId === 0) {
-      // Mostrar todos los empresarios: llamar a todos y mostrar tabla combinada
-      // Lógica: llamar a cada empresario y combinar resultados, o pedir al backend endpoint para todos
-      // Por ahora, mostrar mensaje
-      alert('Selecciona un empresario específico para ver el detalle, o implementa endpoint para todos.');
-    } else {
-      fetchEmpresario(empresarioId, desde, hasta);
-    }
+    fetchEmpresario(empresarioId, desde, hasta);
   };
   const handleBuscarZona = () => {
     if (!zona) {

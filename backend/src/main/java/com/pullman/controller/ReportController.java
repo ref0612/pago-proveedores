@@ -103,6 +103,13 @@ public class ReportController {
             var trips = tripRepository.findByTravelDateBetween(desde, hasta).stream()
                 .filter(t -> t.getCompanyName() != null && !t.getCompanyName().isEmpty())
                 .toList();
+            // Crear mapa de rutas para lookup rápido: clave = origen|destino normalizados
+            var rutasList = routeRepository.findAll();
+            Map<String, Route> rutasMap = new HashMap<>();
+            for (Route r : rutasList) {
+                String key = normalize.apply(r.getOrigen()) + "|" + normalize.apply(r.getDestino());
+                rutasMap.put(key, r);
+            }
             // Agrupar por empresario
             Map<String, List<Trip>> viajesPorEmpresario = new HashMap<>();
             for (Trip t : trips) {
@@ -121,12 +128,10 @@ public class ReportController {
                     viaje.put("destino", t.getDestination());
                     viaje.put("salida", t.getDepartureTime());
                     viaje.put("nroBus", t.getBusNumber());
-                    // Buscar ruta normalizando origen y destino
-                    var rutas = routeRepository.findAll().stream()
-                        .filter(r -> normalize.apply(r.getOrigen()).equals(normalize.apply(t.getOrigin()))
-                                && normalize.apply(r.getDestino()).equals(normalize.apply(t.getDestination())))
-                        .toList();
-                    String zona = (rutas != null && !rutas.isEmpty() && rutas.get(0).getZona() != null) ? rutas.get(0).getZona().getNombre() : null;
+                    // Lookup de ruta usando el mapa
+                    String key = normalize.apply(t.getOrigin()) + "|" + normalize.apply(t.getDestination());
+                    Route ruta = rutasMap.get(key);
+                    String zona = (ruta != null && ruta.getZona() != null) ? ruta.getZona().getNombre() : null;
                     viaje.put("zona", zona);
                     double b = t.getBranchRevenue() != null ? t.getBranchRevenue().doubleValue() : 0;
                     double r = t.getRoadRevenue() != null ? t.getRoadRevenue().doubleValue() : 0;
@@ -137,8 +142,8 @@ public class ReportController {
                     double produccionTotal = b + r + m;
                     viaje.put("produccionTotal", produccionTotal);
                     Double ganancia = null;
-                    if (rutas != null && !rutas.isEmpty() && rutas.get(0).getZona() != null) {
-                        double porcentaje = rutas.get(0).getZona().getPorcentaje();
+                    if (ruta != null && ruta.getZona() != null) {
+                        double porcentaje = ruta.getZona().getPorcentaje();
                         ganancia = produccionTotal * (porcentaje / 100.0);
                     }
                     viaje.put("ganancia", ganancia);
