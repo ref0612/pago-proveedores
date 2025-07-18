@@ -115,7 +115,7 @@ function AppContent() {
           );
         })}
       </div>
-      <Router key={user ? user.email : 'nouser'}>
+      <Router key={user ? user.email : 'nouser'} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={
@@ -196,6 +196,6 @@ function AppContent() {
 }
 
 function App() {
-  return <AppContent />;
+  return <AppContent  />;
 }
 export default App;

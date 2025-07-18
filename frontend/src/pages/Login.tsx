@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { Video } from 'lucide-react';
 
 
 export default function Login() {
@@ -65,36 +66,27 @@ export default function Login() {
 
   return (
     <div className="min-h-screen relative">
-      <div
-        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: 'url(/login-bg-1.jpg)',
-          backgroundAttachment: 'fixed',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          width: '100vw',
-          height: '100vh',
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          zIndex: 0
-        }}
+  {/* Video de fondo */}
+  <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="fixed inset-0 w-full h-full object-cover z-0"
+        src="/video/torres-del-paine-park-in-chile-2023-11-27-05-04-35-utc.mp4"
       />
+
       <div className="relative z-10 flex flex-col lg:flex-row min-h-screen bg-black/30">
         {/* Login Form */}
         <main className="w-full lg:w-1/2 flex items-center justify-center p-4 lg:p-4">
           <div className="w-full max-w-md bg-white rounded-xl shadow-sm">
-            <div className="text-center mb-6">
-              <div className="flex items-center justify-center gap-2 mt-2">
+            <div className="text-center my-3 mb-0">
+              <div className="flex items-center justify-center gap-2 my-4">
               </div>
-              <img
-                src="/pullman-bus-logo.png"
-                alt="Pullman"
-                className="my-2 mx-auto h-18 w-300"
-              />
+              <img src="/pullman-bus-logo.jpg " alt="Logo Pullman" className="w-1/2 mx-auto" />
             </div>
 
-            <h1 className="text-xl text-center px-4 font-bold text-[#01236A] border-b border-t border-gray-100 py-0">Portal de Gestión:<br/>
+            <h1 className="text-xl text-center px-4 font-bold text-[#01236A] border-b border-t border-gray-100 py-0">Portal de Gestión:<br />
               <span className="font-light">Pago a Proveedores</span></h1>
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <form className="space-y-6" onSubmit={handleLogin}>
@@ -198,7 +190,7 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full flex justify-center items-center py-2.5 px-4 border rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-[#ED4717]/85 via-[#920468]/85 to-[#01236A]/85 hover:bg-[#01236A]/90 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                    className="w-full flex justify-center items-center py-2.5 px-4 border rounded-lg shadow-sm text-sm font-medium text-white bg-[#01236A] hover:bg-[#01236A]/90 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                   >
                     {loading ? (
                       <>
@@ -248,7 +240,7 @@ export default function Login() {
               </div>
 
               <div className="mt-8 bg-gray-50 p-2 rounded-lg border-gray-200">
-                <h3 className="text-sm font-medium text-[#01236A] mb-2">Credenciales de prueba</h3>
+                <h3 className="text-sm text-center font-medium text-[#01236A] mb-2">¿Tienes problemas para ingresar? {<br />} Contacta a tu administrador</h3>
                 <div className="space-y-1.5 text-sm text-gray-600">
                   <div className="flex items-start">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2">ADMIN</span>
@@ -283,7 +275,6 @@ export default function Login() {
               </button>
               <div className="absolute bottom-full right-0 mb-2 w-64 bg-white p-3 rounded-lg shadow-lg text-sm text-gray-600 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                 <p>Parque Nacional Torres del Paine</p>
-                <p className="mt-1 text-xs text-gray-400">Foto de Marek Piwnicki</p>
               </div>
             </div>
           </div>

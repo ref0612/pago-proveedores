@@ -98,9 +98,9 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
   const breathingAnimation = `animate-breathing`;
 
   return (
-    <header className="bg-[#F7F8FE] shadow-sm rounded-bl-3xl rounded-br-3xl border-b-2 sticky top-0 z-50 relative">
+    <header className="bg-[#F7F8FE] rounded-bl-3xl rounded-br-3xl border-b sticky top-0 z-50 relative">
       <div className="absolute inset-0 rounded-bl-3xl rounded-br-3xl p-[3px] bg-white -z-10"></div>
-      <div className="flex items-center justify-between px-6 min-h-[64px]">
+      <div className="flex items-center justify-between px-6 min-h-[85px]">
         <div className="flex items-center">
           <button
             onClick={onToggleSidebar}
@@ -110,7 +110,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
             <Menu className="w-6 h-6" />
           </button>
           <h1 className="text-xl font-semibold text-gray-800 hidden md:block">
-           <img src="pullman-bus-logo.png" onClick={() => navigate('/dashboard')} className="w-64 h-13 cursor-pointer" alt="Pullman_Logo" />
+           <img src="/pullman-bus-logo.png" onClick={() => navigate('/dashboard')} className="w-64 h-13 cursor-pointer" alt="Pullman_Logo" />
           </h1>
         </div>
         

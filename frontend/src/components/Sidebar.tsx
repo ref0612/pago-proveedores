@@ -56,7 +56,7 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
     { path: '/trips', label: 'Registro de Recorridos', icon: Route, show: user.canViewTrips },
     { path: '/produccion', label: 'Cálculo de Producción', icon: Calculator, show: user.canViewProduccion },
     { path: '/validacion', label: 'Validación Operacional', icon: CheckCircle, show: user.canViewValidacion },
-    { path: '/liquidacion', label: 'Liquidación y Pagos', icon: CreditCard, show: user.canViewLiquidacion },
+    { path: '/liquidacion', label: 'Liuidación y Pagos', icon: CreditCard, show: user.canViewLiquidacion },
     { path: '/reportes', label: 'Reportes', icon: BarChart3, show: user.canViewReportes },
     { path: '/configuracion', label: 'Configuración', icon: Settings, show: user.rol === 'ADMIN' },
   ];
@@ -77,26 +77,9 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
       onClick={(e) => e.stopPropagation()}
     >
       {/* Sidebar content */}
-      <div className={`h-full flex flex-col w-72 ${!isOpen && !isHovered ? 'opacity-0' : 'opacity-100'}`}>
-        {/* Header del sidebar */}
-        <div className="flex items-center justify-between p-3 text-black">
-          <div className={`flex items-center ${!isOpen && !isHovered ? 'lg:justify-center' : 'justify-start'} w-full`}>
-            {isOpen || isHovered ? (
-              <img
-                src="/Pullman_Bus.png"
-                alt="Pullman Bus"
-                className="my-1 h-8 object-contain"
-              />
-            ) : (
-              <div className="lg:flex items-center justify-center w-full">
-                <img
-                  src="/Pullman_Bus.png"
-                  alt="Pullman"
-                  className="h-8 object-contain hidden lg:block"
-                />
-              </div>
-            )}
-          </div>
+      <div className={`h-full flex flex-col w-72  transition-all duration-100 ease-in-out ${!isOpen && !isHovered ? 'opacity-0' : 'opacity-100'}`}>
+        {/* Sidebar Menu Mobile */}
+        <div className="flex items-center justify-between p-0 text-black">
           <button
             onClick={onClose}
             className="lg:hidden p-2 rounded-md hover:bg-gray-100 transition-colors text-gray-600"
@@ -106,9 +89,9 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
         </div>
 
         {/* Navegación */}
-        <nav className="flex-1 p-4 overflow-y-auto bg-white">
+        <nav className="flex-1 p-4 overflow-y-auto bg-white pt-16 lg:pt-24">
 
-          <div className="space-y-2 my-4">
+          <div className="space-y-2 my-0">
             {modules.filter((m) => m.show).map(({ path, label, icon: Icon }) => {
               const active = routerLocation.pathname.startsWith(path);
               return (
@@ -127,7 +110,7 @@ export default function Sidebar({ isOpen, onClose, isHovered, onMouseEnter, onMo
             })}
           </div>
         </nav>
-        <div className="flex-shrink-0 flex border-t border-gray-200 p-4 bg-gradient-to-r from-[#ED4717]/90 via-[#920468]/90 to-[#01236A]/90">
+        <div className="flex-shrink-0 flex border-t border-gray-200 p-4 bg-[#01236A]">
           <div className="flex items-center w-full">
             <div className="flex-shrink-0">
               <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
