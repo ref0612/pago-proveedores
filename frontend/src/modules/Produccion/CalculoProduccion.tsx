@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { tripsApi } from '../../services/api';
+import { getAuthHeaders } from '../../services/api';
 
 interface Trip {
   id: number;
@@ -129,15 +130,21 @@ const CalculoProduccion: React.FC = () => {
 
   useEffect(() => {
     fetchTrips();
-    fetch('/api/zones?page=0&size=1000')
+    fetch('/api/zones?page=0&size=1000', {
+      headers: getAuthHeaders()
+    })
       .then(res => res.json())
       .then(data => setZones(data.content || data));
-    fetch('/api/routes?page=0&size=1000')
+    fetch('/api/routes?page=0&size=1000', {
+      headers: getAuthHeaders()
+    })
       .then(res => res.json())
       .then(data => setRoutes(data.content || []));
-    fetch('/api/productions')
+    fetch('/api/productions', {
+      headers: getAuthHeaders()
+    })
       .then(res => res.json())
-      .then(data => setProducciones(data));
+      .then(data => setProducciones(Array.isArray(data) ? data : []));
   }, []);
 
   const fetchTrips = async () => {
@@ -184,9 +191,7 @@ const CalculoProduccion: React.FC = () => {
     try {
       const response = await fetch(`/api/productions/generate?decena=${decena}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
       });
       
       if (response.ok) {
@@ -195,9 +200,11 @@ const CalculoProduccion: React.FC = () => {
           setGenerationMessage(`✅ ${result.message}. Se generaron ${result.generatedCount} producciones para la decena ${result.decena}.`);
           setGenerationType('success');
           // Recargar producciones después de generar
-          fetch('/api/productions')
+          fetch('/api/productions', {
+            headers: getAuthHeaders()
+          })
             .then(res => res.json())
-            .then(data => setProducciones(data));
+            .then(data => setProducciones(Array.isArray(data) ? data : []));
         } else {
           setGenerationMessage('');
           setGenerationType(null);
@@ -341,7 +348,7 @@ const CalculoProduccion: React.FC = () => {
   });
 
   // Obtener producciones guardadas en BD para la decena seleccionada
-  const produccionesFiltradas = producciones.filter(p => p.decena === decenaSeleccionada);
+  const produccionesFiltradas = Array.isArray(producciones) ? producciones.filter(p => p.decena === decenaSeleccionada) : [];
   const gananciaTotalBD = produccionesFiltradas.reduce((acc, p) => acc + (p.total || 0), 0);
 
   // Combinar datos calculados con datos guardados
