@@ -163,7 +163,7 @@ public class CsvImportService {
             
             // Obtener viajes optimizados por rango de fechas
             List<Trip> tripsDecena = tripRepository.findByTravelDateBetween(desde, hasta);
-            int count = productionService.generateProductionsForDecena(decena, tripsDecena, routes, zones, entrepreneurs);
+            int count = productionService.generateProductionsForDecena(decena);
             System.out.println("Producciones generadas para decena " + decena + ": " + count);
         }
         
@@ -192,23 +192,25 @@ public class CsvImportService {
         // Buscar por criterios más específicos para evitar duplicados
         if (trip.getTravelDate() != null && trip.getDepartureTime() != null && 
             trip.getOrigin() != null && trip.getDestination() != null && trip.getBusNumber() != null) {
-            
+            // Normalizar los campos clave antes de buscar duplicados
+            String originNorm = NormalizeUtil.normalize(trip.getOrigin());
+            String destNorm = NormalizeUtil.normalize(trip.getDestination());
+            String busNorm = NormalizeUtil.normalize(trip.getBusNumber());
             // Usar la consulta optimizada para verificar existencia
             boolean exists = tripRepository.existsByUniqueCriteria(
                 trip.getTravelDate(),
                 trip.getDepartureTime(),
-                trip.getOrigin().trim(),
-                trip.getDestination().trim(),
-                trip.getBusNumber().trim()
+                originNorm,
+                destNorm,
+                busNorm
             );
-            
             if (exists) {
                 return tripRepository.findByTravelDateAndDepartureTimeAndOriginAndDestinationAndBusNumber(
                     trip.getTravelDate(),
                     trip.getDepartureTime(),
-                    trip.getOrigin().trim(),
-                    trip.getDestination().trim(),
-                    trip.getBusNumber().trim()
+                    originNorm,
+                    destNorm,
+                    busNorm
                 );
             }
         }
@@ -496,7 +498,7 @@ public class CsvImportService {
             }
             
 
-            // Origen y destino normalizados
+            // Origen, destino y bus_number normalizados
             Integer originIndex = columnMapping.get("origin");
             String originNorm = null;
             if (originIndex != null && originIndex < fields.length) {
@@ -517,6 +519,14 @@ public class CsvImportService {
             if (routeIndex != null && routeIndex < fields.length) {
                 routeNorm = NormalizeUtil.normalize(fields[routeIndex]);
                 trip.setRouteName(routeNorm);
+            }
+
+            // Bus number normalizado
+            Integer busIndex = columnMapping.get("bus_number");
+            String busNorm = null;
+            if (busIndex != null && busIndex < fields.length) {
+                busNorm = NormalizeUtil.normalize(fields[busIndex]);
+                trip.setBusNumber(busNorm);
             }
 
             // --- MATCH DE ZONA AUTOMÁTICO ---
@@ -557,11 +567,7 @@ public class CsvImportService {
                 trip.setStatus(fields[statusIndex].trim());
             }
             
-            // Número de Bus
-            Integer busIndex = columnMapping.get("bus_number");
-            if (busIndex != null && busIndex < fields.length) {
-                trip.setBusNumber(fields[busIndex].trim());
-            }
+            // ...eliminado: ya se asigna busNumber normalizado arriba...
             
             // Patente
             Integer plateIndex = columnMapping.get("license_plate");
@@ -736,21 +742,18 @@ public class CsvImportService {
 
     private LocalTime parseTime(String timeStr) {
         try {
-            // Formato esperado: "04:45 AM" o "16:30 PM"
-            String[] parts = timeStr.split(" ");
-            String time = parts[0];
-            String ampm = parts[1];
-            
-            String[] timeParts = time.split(":");
-            int hour = Integer.parseInt(timeParts[0]);
-            int minute = Integer.parseInt(timeParts[1]);
-            
-            if (ampm.equalsIgnoreCase("PM") && hour != 12) {
+            // Permitir formatos: "04:45 AM", "16:30 PM", "04:45", "16:30", "4:45 am", "16:30"
+            String t = timeStr.trim().toUpperCase();
+            t = t.replaceAll("[AP]M$", "").trim(); // Eliminar AM/PM si está pegado
+            t = t.replaceAll("[AP]\\.M\\.$", "").trim(); // Eliminar A.M./P.M. si está pegado
+            String[] parts = t.split(":");
+            int hour = Integer.parseInt(parts[0].trim());
+            int minute = Integer.parseInt(parts[1].replaceAll("[^0-9]", "").trim());
+            if (timeStr.toUpperCase().contains("PM") && hour < 12) {
                 hour += 12;
-            } else if (ampm.equalsIgnoreCase("AM") && hour == 12) {
+            } else if (timeStr.toUpperCase().contains("AM") && hour == 12) {
                 hour = 0;
             }
-            
             return LocalTime.of(hour, minute);
         } catch (Exception e) {
             return LocalTime.of(0, 0);

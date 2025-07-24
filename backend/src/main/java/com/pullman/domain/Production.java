@@ -12,6 +12,16 @@ public class Production {
 
     private String decena; // periodo
     private Double total;
+
+    @Column(name = "ganancia")
+    private Double ganancia;
+    public Double getGanancia() {
+        return ganancia;
+    }
+
+    public void setGanancia(Double ganancia) {
+        this.ganancia = ganancia;
+    }
     private boolean validado;
     private String comentarios;
     private LocalDate fechaValidacion;

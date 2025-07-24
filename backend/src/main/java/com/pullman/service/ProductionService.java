@@ -8,6 +8,7 @@ import com.pullman.domain.Entrepreneur;
 import com.pullman.repository.ProductionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -15,14 +16,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.time.LocalDate;
 
 @Service
 public class ProductionService {
     @Autowired
     private ProductionRepository productionRepository;
-    
+
     @Autowired
     private com.pullman.repository.EntrepreneurRepository entrepreneurRepository;
+
+    @Autowired
+    private com.pullman.repository.TripRepository tripRepository;
+
+    @Autowired
+    private com.pullman.repository.RouteRepository routeRepository;
 
     public Page<Production> findAll(Pageable pageable) {
         return productionRepository.findAll(pageable);
@@ -84,91 +92,96 @@ public class ProductionService {
         return productionRepository.findByEntrepreneurId(entrepreneurId);
     }
 
-    // Método optimizado para generar producciones para una decena específica
-    public int generateProductionsForDecena(String decena, List<Trip> trips, List<Route> routes, List<Zone> zones, List<Entrepreneur> entrepreneurs) {
-        // Crear mapa de empresarios por nombre para acceso O(1)
-        Map<String, Entrepreneur> entrepreneurMap = entrepreneurs.stream()
-            .collect(Collectors.toMap(Entrepreneur::getNombre, e -> e, (existing, replacement) -> existing));
-        
-        // Crear mapa de rutas por origen-destino para acceso O(1)
-        Map<String, Route> routeMap = routes.stream()
-            .collect(Collectors.toMap(
-                route -> route.getOrigen() + "->" + route.getDestino(),
-                route -> route,
-                (existing, replacement) -> existing
-            ));
-        
-        // Agrupar viajes por empresario de manera más eficiente
-        Map<String, List<Trip>> tripsByEntrepreneur = trips.stream()
-            .filter(trip -> trip.getCompanyName() != null && !trip.getCompanyName().isEmpty())
-            .collect(Collectors.groupingBy(Trip::getCompanyName));
-        
-        int generatedCount = 0;
-        
-        for (Map.Entry<String, List<Trip>> entry : tripsByEntrepreneur.entrySet()) {
-            String entrepreneurName = entry.getKey();
-            List<Trip> tripsForEntrepreneur = entry.getValue();
-            
-            // Calcular totales de manera más eficiente
-            double totalIngresos = 0;
-            double totalGanancia = 0;
-            
-            for (Trip trip : tripsForEntrepreneur) {
-                double branchRevenue = trip.getBranchRevenue() != null ? trip.getBranchRevenue().doubleValue() : 0;
-                double roadRevenue = trip.getRoadRevenue() != null ? trip.getRoadRevenue().doubleValue() : 0;
-                double manualIncome = parseManualIncome(trip.getManualIncome());
-                
-                double tripTotal = branchRevenue + roadRevenue + manualIncome;
-                totalIngresos += tripTotal;
-                
-                // Buscar zona de manera más eficiente
-                Zone zone = findZoneForTripOptimized(trip, routeMap);
-                if (zone != null) {
-                    totalGanancia += tripTotal * (zone.getPorcentaje() / 100.0);
+    @Transactional
+    public int generateProductionsForDecena(String decena) {
+        // 1. Obtener rango de fechas de la decena
+        if (decena == null || decena.length() < 5) return 0;
+        int decenaNum = Integer.parseInt(decena.substring(0, 1));
+        int mes = Integer.parseInt(decena.substring(1, 3));
+        int anio = Integer.parseInt(decena.substring(3));
+        int diaInicio = (decenaNum - 1) * 10 + 1;
+        int diaFin = (decenaNum == 3) ? LocalDate.of(anio, mes, 1).lengthOfMonth() : decenaNum * 10;
+        LocalDate desde = LocalDate.of(anio, mes, diaInicio);
+        LocalDate hasta = LocalDate.of(anio, mes, diaFin);
+
+        // 2. Obtener todos los viajes de la decena
+        List<Trip> trips = tripRepository.findByTravelDateBetween(desde, hasta);
+        if (trips.isEmpty()) return 0;
+
+        // 3. Agrupar por nombre de empresa (companyName)
+        Map<String, List<Trip>> tripsByCompany = trips.stream()
+            .filter(t -> t.getCompanyName() != null && !t.getCompanyName().isBlank())
+            .collect(Collectors.groupingBy(t -> t.getCompanyName().trim().toLowerCase()));
+
+        int totalProcesadas = 0;
+        // Obtener todas las rutas una sola vez
+        List<Route> allRoutes = routeRepository.findAll();
+        final List<Route> finalAllRoutes = allRoutes;
+        for (Map.Entry<String, List<Trip>> entry : tripsByCompany.entrySet()) {
+            String companyName = entry.getKey();
+            List<Trip> companyTrips = entry.getValue();
+            Entrepreneur entrepreneur = entrepreneurRepository.findAll().stream()
+                .filter(e -> e.getNombre() != null && e.getNombre().trim().toLowerCase().equals(companyName))
+                .findFirst().orElse(null);
+            if (entrepreneur == null) continue;
+
+            Optional<Production> prodOpt = productionRepository.findByEntrepreneurAndDecena(entrepreneur.getId(), decena);
+            Production prod = prodOpt.orElse(new Production());
+            if (prod.getId() != null && prod.isValidado()) continue;
+
+            // Calcular total: sumatoria de ingresos transportados (sin % zona)
+            double total = companyTrips.stream().mapToDouble(t -> {
+                double suc = t.getBranchRevenue() != null ? t.getBranchRevenue().doubleValue() : 0;
+                double cam = t.getRoadRevenue() != null ? t.getRoadRevenue().doubleValue() : 0;
+                double man = parseManualIncome(t.getManualIncome());
+                return suc + cam + man;
+            }).sum();
+
+            // Calcular ganancia: sumatoria de (ingresos * % zona de la ruta) para cada servicio
+            double ganancia = companyTrips.stream().mapToDouble(t -> {
+                double suc = t.getBranchRevenue() != null ? t.getBranchRevenue().doubleValue() : 0;
+                double cam = t.getRoadRevenue() != null ? t.getRoadRevenue().doubleValue() : 0;
+                double man = parseManualIncome(t.getManualIncome());
+                double ingresos = suc + cam + man;
+                // Buscar zona de la ruta para este viaje
+                String originNorm = normalizeString(t.getOrigin());
+                String destNorm = normalizeString(t.getDestination());
+                Zone zona = null;
+                for (Route route : finalAllRoutes) {
+                    String routeOrigin = normalizeString(route.getOrigen());
+                    String routeDest = normalizeString(route.getDestino());
+                    if ((routeOrigin.equals(originNorm) && routeDest.equals(destNorm)) ||
+                        (routeOrigin.equals(destNorm) && routeDest.equals(originNorm))) {
+                        zona = route.getZona();
+                        break;
+                    }
                 }
-            }
-            
-            // Obtener o crear empresario
-            Entrepreneur entrepreneur = entrepreneurMap.get(entrepreneurName);
-            if (entrepreneur == null) {
-                entrepreneur = new Entrepreneur();
-                entrepreneur.setNombre(entrepreneurName);
-                entrepreneur = entrepreneurRepository.save(entrepreneur);
-                entrepreneurMap.put(entrepreneurName, entrepreneur);
-            }
-            
-            // Verificar si ya existe la producción de manera más eficiente
-            if (!productionRepository.existsByEntrepreneurAndDecena(entrepreneur.getId(), decena) && totalGanancia > 0) {
-                Production production = new Production();
-                production.setDecena(decena);
-                production.setTotal(totalGanancia);
-                production.setValidado(false);
-                production.setComentarios("");
-                production.setEntrepreneur(entrepreneur);
-                productionRepository.save(production);
-                generatedCount++;
-            }
+                double porcentajeZona = (zona != null) ? zona.getPorcentaje() : 0.0;
+                return ingresos * (porcentajeZona / 100.0);
+            }).sum();
+
+            prod.setDecena(decena);
+            prod.setEntrepreneur(entrepreneur);
+            prod.setTotal(total);
+            prod.setGanancia(ganancia);
+            prod.setValidado(false);
+            prod.setComentarios(null);
+            prod.setFechaValidacion(null);
+            prod.setValidadoPor(null);
+            productionRepository.save(prod);
+            totalProcesadas++;
         }
-        
-        return generatedCount;
+
+        return totalProcesadas;
     }
 
-    // Método optimizado para encontrar zona de un viaje
-    private Zone findZoneForTripOptimized(Trip trip, Map<String, Route> routeMap) {
-        if (trip.getOrigin() == null || trip.getDestination() == null) {
-            return null;
-        }
-        
-        String routeKey = trip.getOrigin() + "->" + trip.getDestination();
-        Route route = routeMap.get(routeKey);
-        
-        if (route == null) {
-            // Intentar con dirección inversa
-            routeKey = trip.getDestination() + "->" + trip.getOrigin();
-            route = routeMap.get(routeKey);
-        }
-        
-        return route != null ? route.getZona() : null;
+    // Normaliza cadenas para comparar rutas
+    private String normalizeString(String str) {
+        if (str == null) return "";
+        return java.text.Normalizer.normalize(str.toLowerCase(), java.text.Normalizer.Form.NFD)
+            .replaceAll("[\\p{InCombiningDiacriticalMarks}]", "")
+            .replaceAll("\\s+", " ")
+            .trim();
     }
 
     // Método optimizado para parsear ingresos manuales

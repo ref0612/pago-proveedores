@@ -32,6 +32,7 @@ interface Production {
   id: number;
   decena: string;
   total: number;
+  ganancia: number;
   validado: boolean;
   comentarios: string;
   entrepreneur: { nombre: string };
@@ -131,33 +132,11 @@ const CalculoProduccion: React.FC = () => {
   const [loadingTrips, setLoadingTrips] = useState<boolean>(false);
   const [loadingProgress, setLoadingProgress] = useState<string>('');
 
+  // Carga inicial de datos solo al montar
   useEffect(() => {
-    fetchTrips();
-    getAllZones().then(zs => {
-      // Normaliza nombres de zonas
-      setZones(zs.map((z: Zone) => ({
-        ...z,
-        nombre: normalize(z.nombre)
-      })));
-    });
-    fetch('/api/routes?page=0&size=1000')
-      .then(res => res.json())
-      .then(data => setRoutes((data.content || []).map((r: Route) => ({
-        ...r,
-        origen: normalize(r.origen),
-        destino: normalize(r.destino)
-      }))));
-    productionsApi.getAll().then(ps => {
-      // Normaliza nombre de empresario
-      setProducciones(ps.map((p: Production) => ({
-        ...p,
-        entrepreneur: {
-          ...p.entrepreneur,
-          nombre: normalize(p.entrepreneur?.nombre || '')
-        }
-      })));
-    });
+    reloadAllData();
   }, []);
+
   // Función para recargar todos los datos (trips, zones, routes, producciones)
   const reloadAllData = async () => {
     await fetchTrips();
@@ -175,10 +154,6 @@ const CalculoProduccion: React.FC = () => {
       }
     })));
   };
-
-  useEffect(() => {
-    reloadAllData();
-  }, []);
 
   const fetchTrips = async () => {
     setLoadingTrips(true);
@@ -381,14 +356,14 @@ const CalculoProduccion: React.FC = () => {
 
   // Obtener producciones guardadas en BD para la decena seleccionada
   const produccionesFiltradas = producciones.filter(p => p.decena === decenaSeleccionada);
-  const gananciaTotalBD = produccionesFiltradas.reduce((acc, p) => acc + (p.total || 0), 0);
+  const gananciaTotalBD = produccionesFiltradas.reduce((acc, p) => acc + (p.ganancia || 0), 0);
 
   // Combinar datos calculados con datos guardados
   const resumenCombinado = resumenCalculado.map(calc => {
     const prodBD = produccionesFiltradas.find(p => p.entrepreneur?.nombre === calc.emp);
     return {
       ...calc,
-      gananciaBD: prodBD?.total || 0,
+      gananciaBD: prodBD?.ganancia || 0,
       validado: prodBD?.validado || false,
       comentarios: prodBD?.comentarios || ''
     };
@@ -416,11 +391,13 @@ const CalculoProduccion: React.FC = () => {
     setZonaEditando(zonaId);
     setNuevoPorcentaje(porcentaje.toString());
   };
-  const handleSavePorcentaje = (zonaId: number) => {
+  const handleSavePorcentaje = async (zonaId: number) => {
     const pct = parseFloat(nuevoPorcentaje);
     if (!isNaN(pct)) {
       setZones(zones.map(z => z.id === zonaId ? { ...z, porcentaje: pct } : z));
       setZonaEditando(null);
+      // Recalcular y actualizar producciones en BD para la decena seleccionada
+      await generateProductions(decenaSeleccionada);
     }
   };
 
@@ -431,7 +408,7 @@ const CalculoProduccion: React.FC = () => {
       {/* Selector de decena */}
       <div className="bg-gray-50 p-4 rounded-lg mb-6">
         <h3 className="text-lg font-semibold mb-3">Ganancia por Decena</h3>
-        <div className="mb-4">
+        <div className="mb-4 flex items-center gap-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Seleccionar Decena:
           </label>
@@ -448,8 +425,14 @@ const CalculoProduccion: React.FC = () => {
                     {decenaNum}ª Decena {nombreMesAño}
                   </option>
                 );
-              })}
+            })}
           </select>
+          <button
+            className="ml-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            onClick={reloadAllData}
+          >
+            Buscar
+          </button>
         </div>
       </div>
 
