@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Select from 'react-select';
 import Modal from 'react-modal';
@@ -5,6 +6,14 @@ import { SingleValue } from 'react-select';
 import * as XLSX from 'xlsx';
 import { Plus, Trash2, Edit, X, Upload, AlertTriangle, CheckCircle } from 'lucide-react';
 import { SpinnerWithText } from '../../components/ui/Spinner';
+
+// Devuelve headers con Authorization si hay token
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('authToken');
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
+};
 
 interface Tramo {
   origen: { value: string; label: string } | null;
@@ -15,6 +24,13 @@ interface Tramo {
 // Función para normalizar nombres de ciudades (minúsculas, sin tildes, sin espacios extra)
 function normalizeCityName(name: string): string {
   if (!name) return '';
+  // Intenta decodificar cadenas mal codificadas (ej: ViÃ±a -> Viña)
+  try {
+    // Si viene como bytes mal decodificados, intenta arreglarlo
+    name = decodeURIComponent(escape(name));
+  } catch (e) {
+    // Si falla, sigue con el string original
+  }
   return name
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') // Elimina tildes y diacríticos
@@ -72,7 +88,7 @@ const RegistroRecorridos: React.FC = () => {
 
   // Cargar zonas al montar
   useEffect(() => {
-    fetch('/api/zones?page=0&size=1000')
+    fetch('/api/zones?page=0&size=1000', { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(data => setZones(data.content || data))
       .catch(err => console.error('Error cargando zonas:', err));
@@ -80,7 +96,7 @@ const RegistroRecorridos: React.FC = () => {
 
   // Al montar, obtener ciudades únicas de los viajes y agregarlas si no existen
   useEffect(() => {
-    fetch('http://localhost:8080/api/trips')
+    fetch('http://localhost:8080/api/trips', { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(data => {
         const ciudadesViajes = new Map<string, string>();
@@ -142,8 +158,9 @@ const RegistroRecorridos: React.FC = () => {
         body: JSON.stringify(zona),
       });
       if (res.ok) {
-        const zonaEditada = await res.json();
-        setZones(zones.map(z => (z.id === editId ? zonaEditada : z)));
+        // Refresca el listado completo desde la API
+        const zonasActualizadas = await fetch('/api/zones?page=0&size=1000').then(res => res.json());
+        setZones(zonasActualizadas.content || zonasActualizadas);
         setEditId(null);
         setNombre('');
         setPorcentaje(0);
@@ -156,8 +173,9 @@ const RegistroRecorridos: React.FC = () => {
         body: JSON.stringify(zona),
       });
       if (res.ok) {
-        const zonaCreada = await res.json();
-        setZones([...zones, zonaCreada]);
+        // Refresca el listado completo desde la API
+        const zonasActualizadas = await fetch('/api/zones?page=0&size=1000').then(res => res.json());
+        setZones(zonasActualizadas.content || zonasActualizadas);
         setNombre('');
         setPorcentaje(0);
       }
@@ -168,7 +186,7 @@ const RegistroRecorridos: React.FC = () => {
   const handleDelete = async (id?: number) => {
     if (!id) return;
     if (!window.confirm('¿Seguro que deseas eliminar esta zona?')) return;
-    const res = await fetch(`/api/zones/${id}`, { method: 'DELETE' });
+    const res = await fetch(`/api/zones/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
     if (res.ok) {
       setZones(zones.filter(z => z.id !== id));
     }
@@ -194,7 +212,7 @@ const RegistroRecorridos: React.FC = () => {
     setNombreZona(zone.nombre);
     setPorcentajeZona(zone.porcentaje);
     // Cargar tramos asociados a la zona desde el backend
-    const res = await fetch(`/api/routes/by-zone/${zone.id}`);
+    const res = await fetch(`/api/routes/by-zone/${zone.id}`, { headers: getAuthHeaders() });
     const tramosZona = await res.json();
     setTramos(tramosZona.map((t: any) => ({
       origen: ciudadesChile.find(c => c.value === t.origen) || { value: t.origen, label: t.origen },
@@ -211,18 +229,18 @@ const RegistroRecorridos: React.FC = () => {
       let zonaCreada = editZone;
       // 1. Actualizar zona (nombre, porcentaje)
       if (editZone) {
-        const zonaRes = await fetch(`/api/zones/${editZone.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nombre: nombreZona, porcentaje: porcentajeZona }),
-        });
+    const zonaRes = await fetch(`/api/zones/${editZone.id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ nombre: nombreZona, porcentaje: porcentajeZona }),
+    });
         if (!zonaRes.ok) throw new Error('Error actualizando zona');
         zonaCreada = await zonaRes.json();
       } else {
         // Crear zona nueva
         const zonaRes = await fetch('/api/zones', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ nombre: nombreZona, porcentaje: porcentajeZona }),
         });
         if (!zonaRes.ok) throw new Error('Error creando zona');
@@ -231,7 +249,7 @@ const RegistroRecorridos: React.FC = () => {
       // 2. Obtener tramos actuales en backend (solo si es edición)
       let tramosBackend: any[] = [];
       if (editZone) {
-        const routesRes = await fetch('/api/routes?page=0&size=1000');
+        const routesRes = await fetch('/api/routes?page=0&size=1000', { headers: getAuthHeaders() });
         const allRoutes = await routesRes.json();
         tramosBackend = (allRoutes.content || allRoutes).filter((r: any) => r.zona && r.zona.id === editZone.id);
       }
@@ -250,7 +268,7 @@ const RegistroRecorridos: React.FC = () => {
         tramosToCreate.map(tramo =>
           fetch('/api/routes', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify({
               origen: tramo.origen?.value,
               destino: tramo.destino?.value,
@@ -263,11 +281,11 @@ const RegistroRecorridos: React.FC = () => {
       // 5. Eliminar tramos quitados
       await Promise.all(
         tramosToDelete.map(tb =>
-          fetch(`/api/routes/${tb.id}`, { method: 'DELETE' })
+          fetch(`/api/routes/${tb.id}`, { method: 'DELETE', headers: getAuthHeaders() })
         )
       );
       // 6. Actualizar listado de zonas
-      const zonasActualizadas = await fetch('/api/zones').then(res => res.json());
+      const zonasActualizadas = await fetch('/api/zones', { headers: getAuthHeaders() }).then(res => res.json());
       setZones(zonasActualizadas);
       setModalOpen(false);
       setEditZone(null);
@@ -305,13 +323,13 @@ const RegistroRecorridos: React.FC = () => {
     if (!id) return;
     if (!window.confirm('¿Seguro que deseas eliminar esta zona y todos sus tramos asociados?')) return;
     // Obtener tramos asociados a la zona desde el backend
-    const resTramos = await fetch(`/api/routes/by-zone/${id}`);
+    const resTramos = await fetch(`/api/routes/by-zone/${id}`, { headers: getAuthHeaders() });
     const tramos = await resTramos.json();
-    await Promise.all(tramos.map((tramo: any) => fetch(`/api/routes/${tramo.id}`, { method: 'DELETE' })));
+    await Promise.all(tramos.map((tramo: any) => fetch(`/api/routes/${tramo.id}`, { method: 'DELETE', headers: getAuthHeaders() })));
     // Eliminar zona
-    const res = await fetch(`/api/zones/${id}`, { method: 'DELETE' });
+    const res = await fetch(`/api/zones/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
     if (res.ok) {
-      const zonasActualizadas = await fetch('/api/zones?page=0&size=1000').then(res => res.json());
+      const zonasActualizadas = await fetch('/api/zones?page=0&size=1000', { headers: getAuthHeaders() }).then(res => res.json());
       setZones(zonasActualizadas.content || zonasActualizadas);
       setSuccessMsg('Zona eliminada correctamente');
       setTimeout(() => setSuccessMsg(''), 2500);
@@ -321,7 +339,7 @@ const RegistroRecorridos: React.FC = () => {
   // Eliminar tramo individual
   const handleDeleteTramo = async (tramoId: number, zoneId: number) => {
     if (!window.confirm('¿Seguro que deseas eliminar este tramo?')) return;
-    const res = await fetch(`/api/routes/${tramoId}`, { method: 'DELETE' });
+    const res = await fetch(`/api/routes/${tramoId}`, { method: 'DELETE', headers: getAuthHeaders() });
     if (res.ok) {
       setSuccessMsg('Tramo eliminado correctamente');
       setTimeout(() => setSuccessMsg(''), 2500);
@@ -385,9 +403,9 @@ const RegistroRecorridos: React.FC = () => {
         zonasMap[nombre].tramos.push({ origen, destino, km });
       }
       // Validar duplicados y existencia en backend
-      const zonasRaw = await fetch('/api/zones?page=0&size=1000').then(res => res.json());
+      const zonasRaw = await fetch('/api/zones?page=0&size=1000', { headers: getAuthHeaders() }).then(res => res.json());
       const zonasExistentes = zonasRaw.content || zonasRaw;
-      const routesRaw = await fetch('/api/routes?page=0&size=1000').then(res => res.json());
+      const routesRaw = await fetch('/api/routes?page=0&size=1000', { headers: getAuthHeaders() }).then(res => res.json());
       const routesExistentes = routesRaw.content || routesRaw;
       const resumen: any[] = [];
       Object.entries(zonasMap).forEach(([nombre, data]) => {
@@ -429,7 +447,7 @@ const RegistroRecorridos: React.FC = () => {
   // Actualizar routesExistentes al cargar el modal de carga masiva
   const [routesExistentes, setRoutesExistentes] = useState<any[]>([]);
   useEffect(() => {
-    fetch('/api/routes?page=0&size=1000').then(res => res.json()).then(data => setRoutesExistentes(data.content || data));
+    fetch('/api/routes?page=0&size=1000', { headers: getAuthHeaders() }).then(res => res.json()).then(data => setRoutesExistentes(data.content || data));
   }, [bulkModalOpen]);
 
   // Confirmar importación masiva
@@ -442,7 +460,7 @@ const RegistroRecorridos: React.FC = () => {
       if (!zona) {
         const res = await fetch('/api/zones', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ nombre, porcentaje: data.porcentaje }),
         });
         if (!res.ok) continue;
@@ -452,7 +470,7 @@ const RegistroRecorridos: React.FC = () => {
         if (zona.porcentaje !== data.porcentaje) {
           await fetch(`/api/zones/${zona.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify({ nombre, porcentaje: data.porcentaje }),
           });
         }
@@ -466,7 +484,7 @@ const RegistroRecorridos: React.FC = () => {
         if (!existe) {
           await fetch('/api/routes', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify({
               origen: tramo.origen,
               destino: tramo.destino,
@@ -478,9 +496,9 @@ const RegistroRecorridos: React.FC = () => {
       }
     }
     // Refrescar zonas y tramos
-    const zonasActualizadas = await fetch('/api/zones?page=0&size=1000').then(res => res.json());
+    const zonasActualizadas = await fetch('/api/zones?page=0&size=1000', { headers: getAuthHeaders() }).then(res => res.json());
     setZones(zonasActualizadas.content || zonasActualizadas);
-    fetch('/api/routes?page=0&size=1000').then(res => res.json()).then(data => setRoutesExistentes(data.content || data));
+    fetch('/api/routes?page=0&size=1000', { headers: getAuthHeaders() }).then(res => res.json()).then(data => setRoutesExistentes(data.content || data));
     setSuccessMsg('Carga masiva completada');
     setTimeout(() => setSuccessMsg(''), 2500);
   };
@@ -489,7 +507,7 @@ const RegistroRecorridos: React.FC = () => {
   const fetchUnconfiguredCities = async () => {
     setLoadingCities(true);
     try {
-      const response = await fetch('http://localhost:8080/api/zones/unconfigured-tramos');
+    const response = await fetch('http://localhost:8080/api/zones/unconfigured-tramos', { headers: getAuthHeaders() });
       if (response.ok) {
         const tramos = await response.json();
         setUnconfiguredTramos({
@@ -806,7 +824,7 @@ const RegistroRecorridos: React.FC = () => {
           </tr>
         </thead>
         <tbody>
-          {zones.map(zone => (
+          {(Array.isArray(zones) ? zones : []).map(zone => (
             <tr key={zone.id}>
               <td className="px-4 py-2 font-medium">{zone.nombre}</td>
               <td className="px-4 py-2">{zone.porcentaje}</td>

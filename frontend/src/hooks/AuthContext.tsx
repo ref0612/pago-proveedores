@@ -22,10 +22,28 @@ interface AuthContextType {
   logout: () => void;
   initializeUsers: () => Promise<boolean>;
   updateUser: (updatedUser: User) => void;
+  reloadUser: () => Promise<void>;
   isAdmin: () => boolean;
   isValidador: () => boolean;
   canEditValidated: () => boolean;
 }
+  // Recarga el usuario actual desde la API y actualiza el contexto y localStorage
+  const reloadUser = async () => {
+    if (!user?.id) return;
+    try {
+      const token = localStorage.getItem('authToken');
+      const res = await fetch(`http://localhost:8080/api/users/${user.id}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        const updatedUser = await res.json();
+        setUser(updatedUser);
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      }
+    } catch (err) {
+      // opcional: mostrar error
+    }
+  };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -98,8 +116,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('currentUser', JSON.stringify(updatedUser));
   };
 
+  // Recarga el usuario actual desde la API y actualiza el contexto y localStorage
+  const reloadUser = async () => {
+    if (!user?.id) return;
+    try {
+      const token = localStorage.getItem('authToken');
+      const res = await fetch(`http://localhost:8080/api/users/${user.id}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        const updatedUser = await res.json();
+        setUser(updatedUser);
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      }
+    } catch (err) {
+      // opcional: mostrar error
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, initializeUsers, updateUser, isAdmin, isValidador, canEditValidated }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, initializeUsers, updateUser, reloadUser, isAdmin, isValidador, canEditValidated }}>
       {children}
     </AuthContext.Provider>
   );

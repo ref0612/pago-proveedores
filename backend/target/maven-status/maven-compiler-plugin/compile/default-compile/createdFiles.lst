@@ -53,4 +53,5 @@ com\pullman\service\PrivilegeService.class
 com\pullman\domain\Trip.class
 com\pullman\service\LiquidationService.class
 com\pullman\controller\PaymentController.class
+com\pullman\util\NormalizeUtil.class
 com\pullman\config\JwtUtil.class

@@ -1,6 +1,7 @@
 import sys
 import csv
 from collections import Counter
+from valida_csv_trips_utils import normalize_str
 
 if len(sys.argv) < 2:
     print("Uso: python valida_csv_trips.py <archivo.csv>")
@@ -20,7 +21,24 @@ FIELD_NAMES = {
 def get_field(row, keys):
     for k in keys:
         if k in row and row[k] is not None:
-            return row[k].strip()
+            val = row[k]
+            # Forzar a str y decodificar bytes si es necesario
+            if isinstance(val, bytes):
+                try:
+                    val = val.decode('utf-8')
+                except Exception:
+                    val = val.decode('latin1', errors='ignore')
+            else:
+                try:
+                    val = str(val)
+                except Exception:
+                    val = ''
+            # Corrige errores de encoding típicos
+            try:
+                val = val.encode('latin1').decode('utf-8')
+            except Exception:
+                pass
+            return val.strip()
     return ''
 
 with open(csv_path, encoding='utf-8') as f:
@@ -30,9 +48,9 @@ with open(csv_path, encoding='utf-8') as f:
     for i, row in enumerate(reader, start=2):  # start=2 para contar desde la primera línea de datos
         travel_date = get_field(row, FIELD_NAMES['travel_date'])
         departure_time = get_field(row, FIELD_NAMES['departure_time'])
-        origin = get_field(row, FIELD_NAMES['origin']).lower()
-        destination = get_field(row, FIELD_NAMES['destination']).lower()
-        bus_number = get_field(row, FIELD_NAMES['bus_number']).lower()
+        origin = normalize_str(get_field(row, FIELD_NAMES['origin']))
+        destination = normalize_str(get_field(row, FIELD_NAMES['destination']))
+        bus_number = normalize_str(get_field(row, FIELD_NAMES['bus_number']))
         if not departure_time:
             invalid_rows.append((i, row))
             continue

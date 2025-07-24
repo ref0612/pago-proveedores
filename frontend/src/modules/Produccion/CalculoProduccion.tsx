@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { tripsApi } from '../../services/api';
+import { getAllZones, productionsApi } from '../../services/api';
 
 interface Trip {
   id: number;
@@ -115,6 +116,9 @@ function getNombreMesDecena(decenaStr: string): string {
 }
 
 const CalculoProduccion: React.FC = () => {
+  // Estados para edición de porcentaje de zona
+  const [zonaEditando, setZonaEditando] = useState<number | null>(null);
+  const [nuevoPorcentaje, setNuevoPorcentaje] = useState<string>('');
   const [trips, setTrips] = useState<Trip[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
   const [routes, setRoutes] = useState<Route[]>([]);
@@ -129,15 +133,51 @@ const CalculoProduccion: React.FC = () => {
 
   useEffect(() => {
     fetchTrips();
-    fetch('/api/zones?page=0&size=1000')
-      .then(res => res.json())
-      .then(data => setZones(data.content || data));
+    getAllZones().then(zs => {
+      // Normaliza nombres de zonas
+      setZones(zs.map((z: Zone) => ({
+        ...z,
+        nombre: normalize(z.nombre)
+      })));
+    });
     fetch('/api/routes?page=0&size=1000')
       .then(res => res.json())
-      .then(data => setRoutes(data.content || []));
-    fetch('/api/productions')
-      .then(res => res.json())
-      .then(data => setProducciones(data));
+      .then(data => setRoutes((data.content || []).map((r: Route) => ({
+        ...r,
+        origen: normalize(r.origen),
+        destino: normalize(r.destino)
+      }))));
+    productionsApi.getAll().then(ps => {
+      // Normaliza nombre de empresario
+      setProducciones(ps.map((p: Production) => ({
+        ...p,
+        entrepreneur: {
+          ...p.entrepreneur,
+          nombre: normalize(p.entrepreneur?.nombre || '')
+        }
+      })));
+    });
+  }, []);
+  // Función para recargar todos los datos (trips, zones, routes, producciones)
+  const reloadAllData = async () => {
+    await fetchTrips();
+    const zs = await getAllZones();
+    setZones(zs.map((z: Zone) => ({ ...z, nombre: normalize(z.nombre) })));
+    const routesRes = await fetch('/api/routes?page=0&size=1000');
+    const data = await routesRes.json();
+    setRoutes((data.content || []).map((r: Route) => ({ ...r, origen: normalize(r.origen), destino: normalize(r.destino) })));
+    const ps = await productionsApi.getAll();
+    setProducciones(ps.map((p: Production) => ({
+      ...p,
+      entrepreneur: {
+        ...p.entrepreneur,
+        nombre: normalize(p.entrepreneur?.nombre || '')
+      }
+    })));
+  };
+
+  useEffect(() => {
+    reloadAllData();
   }, []);
 
   const fetchTrips = async () => {
@@ -182,22 +222,21 @@ const CalculoProduccion: React.FC = () => {
     setGenerationType(null);
     
     try {
+      const token = localStorage.getItem('authToken');
       const response = await fetch(`/api/productions/generate?decena=${decena}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
       });
-      
       if (response.ok) {
         const result = await response.json();
         if (result.generatedCount > 0) {
           setGenerationMessage(`✅ ${result.message}. Se generaron ${result.generatedCount} producciones para la decena ${result.decena}.`);
           setGenerationType('success');
           // Recargar producciones después de generar
-          fetch('/api/productions')
-            .then(res => res.json())
-            .then(data => setProducciones(data));
+          productionsApi.getAll().then(setProducciones);
         } else {
           setGenerationMessage('');
           setGenerationType(null);
@@ -371,6 +410,18 @@ const CalculoProduccion: React.FC = () => {
       }
     });
     return Object.values(zonasMap);
+  };
+  // Manejar edición de porcentaje de zona
+  const handleEditPorcentaje = (zonaId: number, porcentaje: number) => {
+    setZonaEditando(zonaId);
+    setNuevoPorcentaje(porcentaje.toString());
+  };
+  const handleSavePorcentaje = (zonaId: number) => {
+    const pct = parseFloat(nuevoPorcentaje);
+    if (!isNaN(pct)) {
+      setZones(zones.map(z => z.id === zonaId ? { ...z, porcentaje: pct } : z));
+      setZonaEditando(null);
+    }
   };
 
   return (

@@ -16,6 +16,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import com.pullman.util.NormalizeUtil;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -54,7 +56,7 @@ public class CsvImportService {
         System.out.println("Archivo: " + file.getOriginalFilename());
         System.out.println("Tamaño: " + file.getSize() + " bytes");
         
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
             String line;
             boolean isFirstLine = true;
             Map<String, Integer> columnMapping = new HashMap<>();
@@ -243,7 +245,7 @@ public class CsvImportService {
         Set<String> citiesInFile = new HashSet<>();
         int totalProcessed = 0;
         int totalSaved = 0;
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
             String line;
             boolean isFirstLine = true;
             Map<String, Integer> columnMapping = new HashMap<>();
@@ -309,7 +311,7 @@ public class CsvImportService {
         int validLines = 0;
         int invalidLines = 0;
         
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
             String line;
             boolean isFirstLine = true;
             Map<String, Integer> columnMapping = new HashMap<>();
@@ -493,22 +495,48 @@ public class CsvImportService {
                 System.out.println("Línea " + lineNumber + ": Hora no encontrada, usando hora por defecto (00:00)");
             }
             
-            // Origen
+
+            // Origen y destino normalizados
             Integer originIndex = columnMapping.get("origin");
+            String originNorm = null;
             if (originIndex != null && originIndex < fields.length) {
-                trip.setOrigin(fields[originIndex].trim());
+                originNorm = NormalizeUtil.normalize(fields[originIndex]);
+                trip.setOrigin(originNorm);
             }
-            
-            // Destino
+
             Integer destIndex = columnMapping.get("destination");
+            String destNorm = null;
             if (destIndex != null && destIndex < fields.length) {
-                trip.setDestination(fields[destIndex].trim());
+                destNorm = NormalizeUtil.normalize(fields[destIndex]);
+                trip.setDestination(destNorm);
             }
-            
-            // Ruta
+
+            // Ruta normalizada
             Integer routeIndex = columnMapping.get("route_name");
+            String routeNorm = null;
             if (routeIndex != null && routeIndex < fields.length) {
-                trip.setRouteName(fields[routeIndex].trim());
+                routeNorm = NormalizeUtil.normalize(fields[routeIndex]);
+                trip.setRouteName(routeNorm);
+            }
+
+            // --- MATCH DE ZONA AUTOMÁTICO ---
+            // Buscar la zona correspondiente usando origen/destino normalizados en las rutas existentes
+            if (originNorm != null && destNorm != null) {
+                // Buscar rutas existentes con origen/destino normalizados
+                java.util.List<com.pullman.domain.Route> rutas = routeRepository.findAll();
+                com.pullman.domain.Zone zonaMatch = null;
+                for (com.pullman.domain.Route r : rutas) {
+                    String rOrig = NormalizeUtil.normalize(r.getOrigen());
+                    String rDest = NormalizeUtil.normalize(r.getDestino());
+                    if (originNorm.equals(rOrig) && destNorm.equals(rDest) && r.getZona() != null) {
+                        zonaMatch = r.getZona();
+                        break;
+                    }
+                }
+                if (zonaMatch != null) {
+                    // Si se encuentra zona, guardar el nombre de la zona en el campo routeName (o crear campo si corresponde)
+                    trip.setRouteName(zonaMatch.getNombre());
+                }
             }
             
             // Servicio
@@ -620,7 +648,7 @@ public class CsvImportService {
             // Razón social
             Integer companyIndex = columnMapping.get("company_name");
             if (companyIndex != null && companyIndex < fields.length) {
-                trip.setCompanyName(fields[companyIndex].trim());
+                trip.setCompanyName(NormalizeUtil.normalize(fields[companyIndex]));
             }
             
             // Conductor

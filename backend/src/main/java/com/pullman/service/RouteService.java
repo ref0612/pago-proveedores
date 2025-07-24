@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import com.pullman.util.NormalizeUtil;
 
 @Service
 public class RouteService {
@@ -24,6 +25,15 @@ public class RouteService {
     }
 
     public Route save(Route route) {
+        if (route.getOrigen() != null) {
+            route.setOrigen(NormalizeUtil.normalize(route.getOrigen()));
+        }
+        if (route.getDestino() != null) {
+            route.setDestino(NormalizeUtil.normalize(route.getDestino()));
+        }
+        if (route.getTipologia() != null) {
+            route.setTipologia(NormalizeUtil.normalize(route.getTipologia()));
+        }
         return routeRepository.save(route);
     }
 

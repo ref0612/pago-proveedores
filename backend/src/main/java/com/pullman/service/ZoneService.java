@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import com.pullman.util.NormalizeUtil;
 
 @Service
 public class ZoneService {
@@ -24,6 +25,9 @@ public class ZoneService {
     }
 
     public Zone save(Zone zone) {
+        if (zone.getNombre() != null) {
+            zone.setNombre(NormalizeUtil.normalize(zone.getNombre()));
+        }
         return zoneRepository.save(zone);
     }
 

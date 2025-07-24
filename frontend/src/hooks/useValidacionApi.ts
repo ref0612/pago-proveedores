@@ -24,7 +24,10 @@ export function useValidacionApi() {
     setError(null);
     try {
       const url = decena ? `${API_URL}?decena=${decena}&includeValidated=${includeValidated}` : `${API_URL}?includeValidated=${includeValidated}`;
-      const res = await fetch(url);
+      const token = localStorage.getItem('authToken');
+      const res = await fetch(url, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      });
       if (!res.ok) throw new Error('Error al obtener validaciones');
       return await res.json();
     } catch (err: any) {
