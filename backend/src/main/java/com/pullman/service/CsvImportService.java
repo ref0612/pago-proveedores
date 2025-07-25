@@ -499,17 +499,36 @@ public class CsvImportService {
             
 
             // Origen, destino y bus_number normalizados
+
+            // --- Corrección explícita de variantes corruptas antes de normalizar ---
+            String fixCorruptCity(String s) {
+                if (s == null) return null;
+                s = s.replace("via±a del mar", "vina del mar")
+                     .replace("viã±a del mar", "vina del mar")
+                     .replace("viña del mar", "vina del mar")
+                     .replace("vi├▒a del mar", "vina del mar")
+                     .replace("viÃ±a del mar", "vina del mar")
+                     .replace("conca³n", "concon")
+                     .replace("conca│n", "concon")
+                     .replace("concã³n", "concon")
+                     .replace("conc├│n", "concon")
+                     .replace("concón", "concon");
+                return s;
+            }
+
             Integer originIndex = columnMapping.get("origin");
             String originNorm = null;
             if (originIndex != null && originIndex < fields.length) {
-                originNorm = NormalizeUtil.normalize(fields[originIndex]);
+                String rawOrigin = fixCorruptCity(fields[originIndex]);
+                originNorm = NormalizeUtil.normalize(rawOrigin);
                 trip.setOrigin(originNorm);
             }
 
             Integer destIndex = columnMapping.get("destination");
             String destNorm = null;
             if (destIndex != null && destIndex < fields.length) {
-                destNorm = NormalizeUtil.normalize(fields[destIndex]);
+                String rawDest = fixCorruptCity(fields[destIndex]);
+                destNorm = NormalizeUtil.normalize(rawDest);
                 trip.setDestination(destNorm);
             }
 
