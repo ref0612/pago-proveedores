@@ -362,10 +362,12 @@ const CalculoProduccion: React.FC = () => {
 
   // Combinar datos calculados con datos guardados
   const resumenCombinado = resumenCalculado.map(calc => {
-    const prodBD = produccionesFiltradas.find(p => p.entrepreneur?.nombre === calc.emp);
+    const prodBD = produccionesFiltradas.find(
+      p => normalize(p.entrepreneur?.nombre || '') === normalize(calc.emp)
+    );
     return {
       ...calc,
-      gananciaBD: prodBD?.ganancia || 0,
+      gananciaBD: prodBD && prodBD.ganancia != null ? Number(prodBD.ganancia) : 0,
       validado: prodBD?.validado || false,
       comentarios: prodBD?.comentarios || ''
     };

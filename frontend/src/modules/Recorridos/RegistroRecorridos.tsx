@@ -14,7 +14,6 @@ const getAuthHeaders = () => {
   if (token) headers['Authorization'] = `Bearer ${token}`;
   return headers;
 };
-import { getAuthHeaders } from '../../services/api';
 
 interface Tramo {
   origen: { value: string; label: string } | null;
@@ -95,7 +94,7 @@ const RegistroRecorridos: React.FC = () => {
 
   // Cargar zonas al montar
   useEffect(() => {
-    fetch('/api/zones?page=0&size=1000')
+    fetch('/api/zones?page=0&size=1000', { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(data => setZones(toArray(data)))
       .catch(err => console.error('Error cargando zonas:', err));

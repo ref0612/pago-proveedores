@@ -23,6 +23,7 @@ export function useValidacionApi() {
   const fetchValidaciones = async (decena?: string, includeValidated: boolean = true): Promise<Validacion[]> => {
     setLoading(true);
     setError(null);
+    try {
       const url = decena ? `${API_URL}?decena=${decena}&includeValidated=${includeValidated}` : `${API_URL}?includeValidated=${includeValidated}`;
       const res = await fetch(url, { headers: getAuthHeaders() });
       if (!res.ok) throw new Error('Error al obtener validaciones');
@@ -40,15 +41,10 @@ export function useValidacionApi() {
     setLoading(true);
     setError(null);
     try {
-      // Debug: verificar si el usuario está autenticado
       if (!user) {
         throw new Error('Usuario no autenticado');
       }
-      
       const authHeaders = getAuthHeaders();
-      console.log('Auth headers:', authHeaders);
-      console.log('User email:', user.email);
-      
       const res = await fetch(`${API_URL}/${id}/validate`, {
         method: 'POST',
         headers: {
@@ -58,7 +54,6 @@ export function useValidacionApi() {
         },
         body: JSON.stringify({ estatus, comentarios }),
       });
-      
       if (!res.ok) {
         const errorText = await res.text();
         throw new Error(`Error al validar producción: ${res.status} - ${errorText}`);
