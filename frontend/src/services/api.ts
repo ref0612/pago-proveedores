@@ -187,3 +187,5 @@ export const getAllZones = async () => {
   const res = await apiGet('/zones?page=0&size=1000');
   return res.content || res;
 };
+
+export { getAuthHeaders };

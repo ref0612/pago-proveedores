@@ -14,6 +14,7 @@ const getAuthHeaders = () => {
   if (token) headers['Authorization'] = `Bearer ${token}`;
   return headers;
 };
+import { getAuthHeaders } from '../../services/api';
 
 interface Tramo {
   origen: { value: string; label: string } | null;
@@ -37,6 +38,12 @@ function normalizeCityName(name: string): string {
     .toLowerCase()
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function toArray(data: any): any[] {
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.content)) return data.content;
+  return [];
 }
 
 const RegistroRecorridos: React.FC = () => {
@@ -88,9 +95,9 @@ const RegistroRecorridos: React.FC = () => {
 
   // Cargar zonas al montar
   useEffect(() => {
-    fetch('/api/zones?page=0&size=1000', { headers: getAuthHeaders() })
+    fetch('/api/zones?page=0&size=1000')
       .then(res => res.json())
-      .then(data => setZones(data.content || data))
+      .then(data => setZones(toArray(data)))
       .catch(err => console.error('Error cargando zonas:', err));
   }, []);
 
@@ -229,11 +236,11 @@ const RegistroRecorridos: React.FC = () => {
       let zonaCreada = editZone;
       // 1. Actualizar zona (nombre, porcentaje)
       if (editZone) {
-    const zonaRes = await fetch(`/api/zones/${editZone.id}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ nombre: nombreZona, porcentaje: porcentajeZona }),
-    });
+        const zonaRes = await fetch(`/api/zones/${editZone.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre: nombreZona, porcentaje: porcentajeZona }),
+        });
         if (!zonaRes.ok) throw new Error('Error actualizando zona');
         zonaCreada = await zonaRes.json();
       } else {
@@ -285,7 +292,7 @@ const RegistroRecorridos: React.FC = () => {
         )
       );
       // 6. Actualizar listado de zonas
-      const zonasActualizadas = await fetch('/api/zones', { headers: getAuthHeaders() }).then(res => res.json());
+      const zonasActualizadas = await fetch('/api/zones').then(res => res.json());
       setZones(zonasActualizadas);
       setModalOpen(false);
       setEditZone(null);
@@ -327,9 +334,9 @@ const RegistroRecorridos: React.FC = () => {
     const tramos = await resTramos.json();
     await Promise.all(tramos.map((tramo: any) => fetch(`/api/routes/${tramo.id}`, { method: 'DELETE', headers: getAuthHeaders() })));
     // Eliminar zona
-    const res = await fetch(`/api/zones/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
+    const res = await fetch(`/api/zones/${id}`, { method: 'DELETE' });
     if (res.ok) {
-      const zonasActualizadas = await fetch('/api/zones?page=0&size=1000', { headers: getAuthHeaders() }).then(res => res.json());
+      const zonasActualizadas = await fetch('/api/zones?page=0&size=1000').then(res => res.json());
       setZones(zonasActualizadas.content || zonasActualizadas);
       setSuccessMsg('Zona eliminada correctamente');
       setTimeout(() => setSuccessMsg(''), 2500);
@@ -403,9 +410,9 @@ const RegistroRecorridos: React.FC = () => {
         zonasMap[nombre].tramos.push({ origen, destino, km });
       }
       // Validar duplicados y existencia en backend
-      const zonasRaw = await fetch('/api/zones?page=0&size=1000', { headers: getAuthHeaders() }).then(res => res.json());
+      const zonasRaw = await fetch('/api/zones?page=0&size=1000').then(res => res.json());
       const zonasExistentes = zonasRaw.content || zonasRaw;
-      const routesRaw = await fetch('/api/routes?page=0&size=1000', { headers: getAuthHeaders() }).then(res => res.json());
+      const routesRaw = await fetch('/api/routes?page=0&size=1000').then(res => res.json());
       const routesExistentes = routesRaw.content || routesRaw;
       const resumen: any[] = [];
       Object.entries(zonasMap).forEach(([nombre, data]) => {
@@ -447,7 +454,7 @@ const RegistroRecorridos: React.FC = () => {
   // Actualizar routesExistentes al cargar el modal de carga masiva
   const [routesExistentes, setRoutesExistentes] = useState<any[]>([]);
   useEffect(() => {
-    fetch('/api/routes?page=0&size=1000', { headers: getAuthHeaders() }).then(res => res.json()).then(data => setRoutesExistentes(data.content || data));
+    fetch('/api/routes?page=0&size=1000').then(res => res.json()).then(data => setRoutesExistentes(data.content || data));
   }, [bulkModalOpen]);
 
   // Confirmar importación masiva
@@ -496,9 +503,9 @@ const RegistroRecorridos: React.FC = () => {
       }
     }
     // Refrescar zonas y tramos
-    const zonasActualizadas = await fetch('/api/zones?page=0&size=1000', { headers: getAuthHeaders() }).then(res => res.json());
+    const zonasActualizadas = await fetch('/api/zones?page=0&size=1000').then(res => res.json());
     setZones(zonasActualizadas.content || zonasActualizadas);
-    fetch('/api/routes?page=0&size=1000', { headers: getAuthHeaders() }).then(res => res.json()).then(data => setRoutesExistentes(data.content || data));
+    fetch('/api/routes?page=0&size=1000').then(res => res.json()).then(data => setRoutesExistentes(data.content || data));
     setSuccessMsg('Carga masiva completada');
     setTimeout(() => setSuccessMsg(''), 2500);
   };
@@ -507,7 +514,7 @@ const RegistroRecorridos: React.FC = () => {
   const fetchUnconfiguredCities = async () => {
     setLoadingCities(true);
     try {
-    const response = await fetch('http://localhost:8080/api/zones/unconfigured-tramos', { headers: getAuthHeaders() });
+      const response = await fetch('http://localhost:8080/api/zones/unconfigured-tramos');
       if (response.ok) {
         const tramos = await response.json();
         setUnconfiguredTramos({

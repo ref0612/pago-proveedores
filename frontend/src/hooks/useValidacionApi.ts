@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from './useAuth';
+import { getAuthHeaders } from '../services/api';
 
 export interface Validacion {
   id?: number;
@@ -22,16 +23,12 @@ export function useValidacionApi() {
   const fetchValidaciones = async (decena?: string, includeValidated: boolean = true): Promise<Validacion[]> => {
     setLoading(true);
     setError(null);
-    try {
       const url = decena ? `${API_URL}?decena=${decena}&includeValidated=${includeValidated}` : `${API_URL}?includeValidated=${includeValidated}`;
-      const token = localStorage.getItem('authToken');
-      const res = await fetch(url, {
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-      });
+      const res = await fetch(url, { headers: getAuthHeaders() });
       if (!res.ok) throw new Error('Error al obtener validaciones');
       return await res.json();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError((err as Error).message);
       return [];
     } finally {
       setLoading(false);
@@ -43,15 +40,29 @@ export function useValidacionApi() {
     setLoading(true);
     setError(null);
     try {
+      // Debug: verificar si el usuario está autenticado
+      if (!user) {
+        throw new Error('Usuario no autenticado');
+      }
+      
+      const authHeaders = getAuthHeaders();
+      console.log('Auth headers:', authHeaders);
+      console.log('User email:', user.email);
+      
       const res = await fetch(`${API_URL}/${id}/validate`, {
         method: 'POST',
         headers: {
+          ...authHeaders,
           'Content-Type': 'application/json',
-          'X-User-Email': user?.email || '',
+          'X-User-Email': user.email,
         },
         body: JSON.stringify({ estatus, comentarios }),
       });
-      if (!res.ok) throw new Error('Error al validar producción');
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Error al validar producción: ${res.status} - ${errorText}`);
+      }
       return true;
     } catch (err: any) {
       setError(err.message);

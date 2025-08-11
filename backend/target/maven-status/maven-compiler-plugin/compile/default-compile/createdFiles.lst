@@ -1,4 +1,3 @@
-com\pullman\controller\CsvImportController.class
 com\pullman\config\SecurityConfig.class
 com\pullman\repository\PaymentRepository.class
 com\pullman\service\AuditLogService.class
@@ -29,7 +28,6 @@ com\pullman\repository\RouteRepository.class
 com\pullman\repository\PrivilegeRepository.class
 com\pullman\controller\LiquidationDto.class
 com\pullman\repository\TripRepository.class
-com\pullman\controller\TripController.class
 com\pullman\repository\NotificacionRepository.class
 com\pullman\config\JwtAuthFilter.class
 com\pullman\repository\EntrepreneurRepository.class
@@ -45,7 +43,6 @@ com\pullman\repository\AuditLogRepository.class
 com\pullman\domain\RolePrivilege.class
 com\pullman\domain\Zone.class
 com\pullman\service\PaymentService.class
-com\pullman\service\CsvImportService.class
 com\pullman\service\RouteService.class
 com\pullman\service\UserService.class
 com\pullman\domain\AuditLog.class

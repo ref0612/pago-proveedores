@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { tripsApi } from '../../services/api';
-import { getAllZones, productionsApi } from '../../services/api';
+import { tripsApi, getAuthHeaders } from '../../services/api';
 
 interface Trip {
   id: number;
@@ -134,25 +133,30 @@ const CalculoProduccion: React.FC = () => {
 
   // Carga inicial de datos solo al montar
   useEffect(() => {
-    reloadAllData();
+    fetchTrips();
+    fetch('/api/zones?page=0&size=1000', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => setZones(data.content || data));
+    fetch('/api/routes?page=0&size=1000', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => setRoutes(data.content || []));
+    fetch('/api/productions', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => setProducciones(Array.isArray(data) ? data : []));
   }, []);
 
   // Función para recargar todos los datos (trips, zones, routes, producciones)
   const reloadAllData = async () => {
     await fetchTrips();
-    const zs = await getAllZones();
-    setZones(zs.map((z: Zone) => ({ ...z, nombre: normalize(z.nombre) })));
-    const routesRes = await fetch('/api/routes?page=0&size=1000');
-    const data = await routesRes.json();
-    setRoutes((data.content || []).map((r: Route) => ({ ...r, origen: normalize(r.origen), destino: normalize(r.destino) })));
-    const ps = await productionsApi.getAll();
-    setProducciones(ps.map((p: Production) => ({
-      ...p,
-      entrepreneur: {
-        ...p.entrepreneur,
-        nombre: normalize(p.entrepreneur?.nombre || '')
-      }
-    })));
+    await fetch('/api/zones?page=0&size=1000', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => setZones(data.content || data));
+    await fetch('/api/routes?page=0&size=1000', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => setRoutes(data.content || []));
+    await fetch('/api/productions', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => setProducciones(Array.isArray(data) ? data : []));
   };
 
   const fetchTrips = async () => {
@@ -197,13 +201,9 @@ const CalculoProduccion: React.FC = () => {
     setGenerationType(null);
     
     try {
-      const token = localStorage.getItem('authToken');
       const response = await fetch(`/api/productions/generate?decena=${decena}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
+        headers: getAuthHeaders(),
       });
       if (response.ok) {
         const result = await response.json();
@@ -211,7 +211,9 @@ const CalculoProduccion: React.FC = () => {
           setGenerationMessage(`✅ ${result.message}. Se generaron ${result.generatedCount} producciones para la decena ${result.decena}.`);
           setGenerationType('success');
           // Recargar producciones después de generar
-          productionsApi.getAll().then(setProducciones);
+          fetch('/api/productions', { headers: getAuthHeaders() })
+            .then(res => res.json())
+            .then(data => setProducciones(Array.isArray(data) ? data : []));
         } else {
           setGenerationMessage('');
           setGenerationType(null);
@@ -355,8 +357,8 @@ const CalculoProduccion: React.FC = () => {
   });
 
   // Obtener producciones guardadas en BD para la decena seleccionada
-  const produccionesFiltradas = producciones.filter(p => p.decena === decenaSeleccionada);
-  const gananciaTotalBD = produccionesFiltradas.reduce((acc, p) => acc + (p.ganancia || 0), 0);
+  const produccionesFiltradas = Array.isArray(producciones) ? producciones.filter(p => p.decena === decenaSeleccionada) : [];
+  const gananciaTotalBD = produccionesFiltradas.reduce((acc, p) => acc + (p.total || 0), 0);
 
   // Combinar datos calculados con datos guardados
   const resumenCombinado = resumenCalculado.map(calc => {

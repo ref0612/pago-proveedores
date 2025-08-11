@@ -43,6 +43,22 @@ public class CsvImportService {
     private static final int BATCH_SIZE = 1000; // Procesar en lotes de 1000 registros
     private static final int PROGRESS_UPDATE_INTERVAL = 5000; // Actualizar progreso cada 5000 registros
 
+    // --- Corrección explícita de variantes corruptas antes de normalizar ---
+    private String fixCorruptCity(String s) {
+        if (s == null) return null;
+        s = s.replace("via±a del mar", "vina del mar")
+             .replace("viã±a del mar", "vina del mar")
+             .replace("viña del mar", "vina del mar")
+             .replace("vi├▒a del mar", "vina del mar")
+             .replace("viÃ±a del mar", "vina del mar")
+             .replace("conca³n", "concon")
+             .replace("conca│n", "concon")
+             .replace("concã³n", "concon")
+             .replace("conc├│n", "concon")
+             .replace("concón", "concon");
+        return s;
+    }
+
     public List<Trip> importTripsFromCsv(MultipartFile file) throws IOException {
         List<Trip> allTrips = new ArrayList<>();
         List<Trip> batchTrips = new ArrayList<>();
@@ -501,20 +517,6 @@ public class CsvImportService {
             // Origen, destino y bus_number normalizados
 
             // --- Corrección explícita de variantes corruptas antes de normalizar ---
-            String fixCorruptCity(String s) {
-                if (s == null) return null;
-                s = s.replace("via±a del mar", "vina del mar")
-                     .replace("viã±a del mar", "vina del mar")
-                     .replace("viña del mar", "vina del mar")
-                     .replace("vi├▒a del mar", "vina del mar")
-                     .replace("viÃ±a del mar", "vina del mar")
-                     .replace("conca³n", "concon")
-                     .replace("conca│n", "concon")
-                     .replace("concã³n", "concon")
-                     .replace("conc├│n", "concon")
-                     .replace("concón", "concon");
-                return s;
-            }
 
             Integer originIndex = columnMapping.get("origin");
             String originNorm = null;

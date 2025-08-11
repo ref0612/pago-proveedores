@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { Video } from 'lucide-react';
+import { Video, Phone } from 'lucide-react';
 
 
 export default function Login() {
@@ -240,24 +240,25 @@ export default function Login() {
               </div>
 
               <div className="mt-8 bg-gray-50 p-2 rounded-lg border-gray-200">
-                <h3 className="text-sm text-center font-medium text-[#01236A] mb-2">¿Tienes problemas para ingresar? {<br />} Contacta a tu administrador</h3>
-                <div className="space-y-1.5 text-sm text-gray-600">
-                  <div className="flex items-start">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2">ADMIN</span>
-                    <span>admin@pullman.com / admin123</span>
+                <div className="bg-[#f7f9fc] rounded-xl p-4 flex flex-col items-center">
+                  <p className="text-[#01236A] text-center text-sm mb-3">¿Tienes problema para acceder a tu cuenta? Contacta a tu administrador:</p>
+                  <div className="flex flex-row justify-center gap-8 w-full mb-2">
+                    <div className="flex flex-col items-center">
+                      <span className="text-sm text-[#01236A]">Juan Carlos Romo</span>
+                      <div className="flex items-center gap-1 mt-1">
+                        <Phone className="h-4 w-4 text-[#01236A]" />
+                        <span className="text-[#01236A] font-sm text-sm">56 9 4807 0000</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span className="text-sm text-[#01236A]">Kenya Tapia</span>
+                      <div className="flex items-center gap-1 mt-1">
+                        <Phone className="h-4 w-4 text-[#01236A]" />
+                        <span className="text-[#01236A] font-sm text-sm">56 9 4807 0000</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-start">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mr-2">VALIDADOR</span>
-                    <span>validador@pullman.com / val123</span>
-                  </div>
-                  <div className="flex items-start">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mr-2">MIEMBRO</span>
-                    <span>miembro@pullman.com / miem123</span>
-                  </div>
-                  <div className="flex items-start">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-2">INVITADO</span>
-                    <span>invitado@pullman.com / inv123</span>
-                  </div>
+                  <div className="w-16 border-t border-blue-200 my-2"></div>
                 </div>
               </div>
             </div>
